@@ -5,7 +5,7 @@
 #define LEFT 0
 #define RIGHT 1
 
-#define DEBUGMODE 1
+#define DEBUGMODE 0
 /*
  * Algo set of commands:
  * F
@@ -28,6 +28,7 @@ int i;
 String in_command = "";
 
 bool exploring = false;
+
 void setup() {
   Serial.begin(9600);
   for(int i=0; i<6; i++)
@@ -35,16 +36,16 @@ void setup() {
     IR_sensors[i] = new IR(i);
   }
   motor = new Motor(E1A, E1B, E2A, E2B);
-  calibration = new Calibration(IR_sensors, motor);
+  calibration = new Calibration(IR_sensors, motor,DEBUGMODE);
   
   pinMode(E1A, INPUT);
   pinMode(E1B, INPUT);
   pinMode(E2A, INPUT);
   pinMode(E2B, INPUT);
+  delay(1000);
 }
 
 void loop() {
-  
   // take reading, send integers to algo
   String sendToAlgo = "";
   for(i=0; i<6; i++)
@@ -64,14 +65,13 @@ void loop() {
     
   }
   Serial.println(sendToAlgo);
-  delay(500);
   // calibrate
   //calibration->calibrateRotation(true);
   // read command, parse and execute
   while(!readCommand(&in_command)); // block until command comes in
   int start = 0;
   int end = 1;
-  while(end <= in_command.length())
+  while(end < in_command.length())
   {
     bool isHandled = executeInstruction(in_command.substring(start,end));
     if(isHandled)
@@ -82,6 +82,7 @@ void loop() {
     end++;
   }
   in_command = "";
+  if(DEBUGMODE)Serial.print("EOL");
 }
 bool executeInstruction(String instr)
 {
@@ -109,16 +110,23 @@ bool executeInstruction(String instr)
   {
     exploring = false;
   }
+  else if(instr == "N")
+  {
+    return true;
+  }
   else if(instr == "CF0")
   {
+    int limit = 5;
     hasRotated = calibration->calibrateRotation(true);
-    if(hasRotated == 0)
+    while(hasRotated == 0 && limit>0)
     {
       calibration->calibrateDisplacement_forRotation();
+      delay(100);
       hasRotated = calibration->calibrateRotation(true);
+      delay(100);
+      limit--;
     }
-    
-    delay(100);
+    if(limit<=0 && DEBUGMODE)Serial.println("--Give up trying to rotate.--");
     calibration->calibrateDisplacement();
   }
   else if(instr == "CS0")
@@ -133,30 +141,9 @@ bool executeInstruction(String instr)
     delay(100);
     calibration->calibrateDisplacement();
   }
-  else if(instr == "N")
-    return true;
   else
     return false;
-
   return true;
-//  switch(instr)
-//  {
-//
-//    return true;
-//    case "C":// Calibrate front / Calibrate side
-//    
-//    return true;
-//    case "ES":
-//    exploring = true;
-//    return true;
-//    case "EE":
-//    exploring = false;
-//    return true;
-//    
-//    default:
-//
-//    return false;
-//  }
 }
 bool readCommand(String *readVal)
 {
