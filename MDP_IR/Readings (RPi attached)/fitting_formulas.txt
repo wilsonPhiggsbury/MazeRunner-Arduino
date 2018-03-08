@@ -1,0 +1,22 @@
+front calibration
+
+range 0:
+	normal fluctuation < 0.05
+	abnormal: >=0.05
+	trust the middle sensor for dispacement error
+range 0.5:
+	normal fluctuation <0.1
+	abnormal: >=0.1
+	trust the middle sensor for dispacement error
+
+applicable ranges: -0.1 ~ 0.7, only scale abnormal values between 0~0.5
+
+side calibration
+
+range 0:
+	normal fluctuation < 0.05
+	abnormal: >=0.05
+range 1:
+	normal fluctuation <0.1
+	abnormal: >=0.1
+applicable ranges: -0.2 ~ 1.0, scale between 0.5 ~ 1.0
