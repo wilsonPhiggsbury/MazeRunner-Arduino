@@ -5,7 +5,6 @@
 #define LEFT 0
 #define RIGHT 1
 
-#define DEBUGMODE 0
 /*
  * Algo set of commands:
  * F
@@ -20,6 +19,7 @@ const int E1A = 3; //right
 const int E1B = 5;
 const int E2A = 11; //left
 const int E2B = 13;
+bool DEBUGMODE = false;
 
 IR *IR_sensors[6];
 Motor *motor;
@@ -77,7 +77,7 @@ void loop() {
     if(isHandled)
     {
       start = end;
-      delay(500);
+      delay(250);
     }
     end++;
   }
@@ -85,9 +85,7 @@ void loop() {
   if(DEBUGMODE)Serial.print("EOL");
 }
 bool executeInstruction(String instr)
-{
-  int hasRotated;
-  
+{  
   if(instr == "F")
     motor->command("FORWARD 60 1");
   else if(instr == "B")
@@ -116,30 +114,24 @@ bool executeInstruction(String instr)
   }
   else if(instr == "CF0")
   {
-    int limit = 5;
-    hasRotated = calibration->calibrateRotation(true);
-    while(hasRotated == 0 && limit>0)
-    {
-      calibration->calibrateDisplacement_forRotation();
-      delay(100);
-      hasRotated = calibration->calibrateRotation(true);
-      delay(100);
-      limit--;
-    }
-    if(limit<=0 && DEBUGMODE)Serial.println("--Give up trying to rotate.--");
-    calibration->calibrateDisplacement();
+    calibration->doCalibrationSet(0,'F');
+  }
+  else if(instr == "CF1")
+  {
+    calibration->doCalibrationSet(1,'F');
   }
   else if(instr == "CS0")
   {
-    hasRotated = calibration->calibrateRotation(false);
-    delay(100);
-    calibration->calibrateDisplacement();
+    calibration->doCalibrationSet(0,'S');
   }
   else if(instr == "CS1")
   {
-    hasRotated = calibration->calibrateRotation(false);
-    delay(100);
-    calibration->calibrateDisplacement();
+    calibration->doCalibrationSet(1,'S');
+  }
+  else if(instr== "D")
+  {
+    DEBUGMODE = !DEBUGMODE;
+    calibration->toggleDebug();
   }
   else
     return false;
