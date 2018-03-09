@@ -27,14 +27,14 @@ const float e1_offset = 0;
 const float e2_offset = 0;
 
 //rotation time offset
-const float rotate_r_m = 0.09523809523;
-const float rotate_r_c = 11.7142857143;
+const float rotate_r_m = -0.22222222222;
+const float rotate_r_c = 160;
 const float rotate_l_m = 0.15873015873;
 const float rotate_l_c = 25.7142857143;
 
 //distance time offset
-const float dis_time_m = 20;
-const float dis_time_c = 0;
+const float dis_time_m = 5.71428571429;
+const float dis_time_c = 14.2857142857;
 
 class Motor
 {
@@ -75,5 +75,5 @@ class Motor
         long getMoveTime(float rpm, float num_cell);
         long getRotateTime(float rpm, float degree, bool isRight);
         long getPeriod(String full_command);
-
+        void resetError();
 };

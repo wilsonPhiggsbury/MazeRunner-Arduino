@@ -31,19 +31,7 @@ void Motor::command(String fullCommand)
     String command = this->getSubString(fullCommand, ' ', 0);
     this->commandPeriod = getPeriod(fullCommand);
 	  this->motor_status = command;
-    if(command == "TURN_RIGHT")
-    {
-        md.setSpeeds(rpmToSpeed(80, false), -1*rpmToSpeed(80, true));
-        delay(this->commandPeriod);
-        md.setBrakes(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
-    }
-    else if(command == "TURN_LEFT")
-    {
-        md.setSpeeds(-1*rpmToSpeed(80, false), rpmToSpeed(80, true));
-        delay(this->commandPeriod);
-        md.setBrakes(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
-    }
-    else if(command == "FORWARD")
+    if(command == "FORWARD")
     {
         float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
         this->moveForward(rpm);
@@ -52,7 +40,7 @@ void Motor::command(String fullCommand)
           this->adjustSpeed(true);
         }
         md.setBrakes(400,400);
-        //md.setBrakes(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
+        this->resetError();
     }
     else if(command == "BACKWARD")
     {
@@ -63,7 +51,7 @@ void Motor::command(String fullCommand)
           this->adjustSpeed(false);
         }
         md.setBrakes(400,400);
-        //md.setBrakes(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
+        this->resetError();
     }
     else if(command == "ROTATE_RIGHT")
     {
@@ -213,6 +201,7 @@ long Motor::getRotateTime(float rpm, float degree, bool isRight) {
   else
   {
     offset = rotate_l_m*(degree) + rotate_l_c;
+    offset = 50;
   }
   return moveTime + offset;
 }
@@ -249,5 +238,15 @@ long Motor::getPeriod(String full_command) {
   {
     return getSubString(full_command, ' ', 1).toInt();
   }
+}
+
+void Motor::resetError()
+{
+  this->last_last_error_e1 = 0;
+  this->last_last_error_e2 = 0;
+  this->last_error_e1 = 0;
+  this->last_error_e2 = 0;
+  this->error_e1 = 0;
+  this->error_e2 = 0;
 }
 
