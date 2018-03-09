@@ -71,6 +71,24 @@ while True:
                     whichFile = 1
                     print("Side sensors value:\t",line,end='')
                 line = ""
+    elif action=='d':
+        ser.write(bytes('D\n','utf-8'))
+        sleep(0.5)
+        while ser.in_waiting:
+            readChar = ser.read().decode('utf-8')
+            line += readChar
+            if readChar=='\n':
+                if whichFile==1:
+                    myfile.write(line)
+                    myfile.flush()
+                    whichFile = 2
+                    print("Front sensors value:\t",line,end='')
+                else:
+                    myfile2.write(line)
+                    myfile2.flush()
+                    whichFile = 1
+                    print("Side sensors value:\t",line,end='')
+                line = ""
 
 ser.close()
 myfile.close()

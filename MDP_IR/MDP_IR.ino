@@ -24,7 +24,7 @@ void loop() {
     {
       float fittedDist;
       fittedDist = IR_sensors[i]->takeReading(!raw);
-      Serial.print(String(fittedDist,2));
+      Serial.print(String(fittedDist,0));
       if(i==2 || i==5)Serial.print("\n");
       else Serial.print("\t");
     }

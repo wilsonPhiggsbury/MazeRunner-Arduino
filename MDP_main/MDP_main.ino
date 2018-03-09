@@ -25,11 +25,12 @@ IR *IR_sensors[6];
 Motor *motor;
 Calibration *calibration;
 int i;
-String in_command = "";
 
+String in_command = "";
+char lumpingInstr = 'n';
 bool exploring = false;
 
-void setup() {
+void setup(){
   Serial.begin(9600);
   for(int i=0; i<6; i++)
   {
@@ -43,26 +44,50 @@ void setup() {
   pinMode(E2A, INPUT);
   pinMode(E2B, INPUT);
   delay(1000);
+//  for(i=0;i<15;i++)
+//  {
+//    motor->command("ROTATE_LEFT 105 "+String(i));
+//    delay(500);
+//    motor->command("ROTATE_RIGHT 105 "+String(i));
+//    delay(500);
+//    Serial.println(i);
+//  }
+//  for(i=15;i>=0;i--)
+//  {
+//    motor->command("ROTATE_LEFT 105 "+String(i));
+//    delay(500);
+//    motor->command("ROTATE_RIGHT 105 "+String(i));
+//    delay(500);
+//    Serial.println(i);
+//  }
 }
 
 void loop() {
   // take reading, send integers to algo
   String sendToAlgo = "";
+  // take dummy reading
   for(i=0; i<6; i++)
   {
     IR_sensors[i]->takeReading(true);
-    int roundedVal;
+  }
+  delay(1000);
+  // take real reading
+  for(i=0; i<6; i++)
+  {
+    IR_sensors[i]->takeReading(true);
+    int thisReading;
     if(!DEBUGMODE)
     {
-      roundedVal= round(IR_sensors[i]->reading);
-      sendToAlgo += String(roundedVal);
+      thisReading = IR_sensors[i]->reading;
+      if(thisReading<0)
+        thisReading = 0;
+      sendToAlgo += String(round(thisReading/100.0));
     }
     else
     {
-      sendToAlgo += String(IR_sensors[i]->reading,2);
+      sendToAlgo += String(IR_sensors[i]->reading);
       sendToAlgo += "\t";
     }
-    
   }
   Serial.println(sendToAlgo);
   // calibrate
@@ -71,9 +96,9 @@ void loop() {
   while(!readCommand(&in_command)); // block until command comes in
   int start = 0;
   int end = 1;
-  while(end < in_command.length())
+  while(end <= in_command.length())
   {
-    bool isHandled = executeInstruction(in_command.substring(start,end));
+    bool isHandled = executeInstruction(in_command.substring(start,end),end-start);
     if(isHandled)
     {
       start = end;
@@ -84,20 +109,53 @@ void loop() {
   in_command = "";
   if(DEBUGMODE)Serial.print("EOL");
 }
-bool executeInstruction(String instr)
+bool executeInstruction(String instr, int instr_len)
 {  
+//   check if i am lumping instruction, and if last char of instr matches
+  if(lumpingInstr != 'n')
+  {
+    
+    if(instr.charAt(instr_len-1)==lumpingInstr)
+      return false;
+    else
+    {
+      if(lumpingInstr=='F')
+        motor->command("FORWARD 60 "+String(instr_len));
+      else if(lumpingInstr=='B')
+        motor->command("BACKWARD 60 "+String(instr_len));
+        
+      lumpingInstr = 'n';
+      instr = instr.charAt(instr_len-1);
+    }
+  }
   if(instr == "F")
-    motor->command("FORWARD 60 1");
+  {
+    if(lumpingInstr == 'n')
+      lumpingInstr = 'F';
+    return false;
+  }
   else if(instr == "B")
-    motor->command("BACKWARD 60 1");
+  {
+    if(lumpingInstr == 'n')
+      lumpingInstr = 'B';
+    return false;
+  }
+//  if(instr == "F")
+//  {
+//    motor->command("FORWARD 105 1");
+//  }
+//  else if(instr == "B")
+//  {
+//    motor->command("BACKWARD 105 1");
+//  }
   else if(instr == "L")
   {
-    motor->command("ROTATE_LEFT 80 90");
+    motor->command("ROTATE_LEFT 105 90");
     calibration->informTurn(false);
   }
   else if(instr == "R")
   {
-    motor->command("ROTATE_RIGHT 80 90");
+    motor->command("ROTATE_RIGHT 105 90");
     calibration->informTurn(true);
   }
   else if(instr == "ES")

@@ -5,9 +5,11 @@
 #include "WProgram.h"
 #endif
 
+#define BATT_VOLT_SCALE 0.5
 Motor::Motor(int E1A, int E1B, int E2A, int E2B)
 {
     md.init();
+    attachInterrupt(digitalPinToInterrupt(E1A), incrementTick, RISING);
     this->desired_rpm = 0;
     this->input_rpm_e1 = 0;
     this->input_rpm_e2 = 0;
@@ -22,8 +24,8 @@ Motor::Motor(int E1A, int E1B, int E2A, int E2B)
     this->last_last_error_e1 = 0;
     this->last_last_error_e2 = 0;
     this->motor_status = "FORWARD";
-    this->startTime = 0;
     this->commandPeriod = 0;
+    tick = 0;
 }
 
 void Motor::command(String fullCommand)
@@ -31,54 +33,46 @@ void Motor::command(String fullCommand)
     String command = this->getSubString(fullCommand, ' ', 0);
     this->commandPeriod = getPeriod(fullCommand);
 	  this->motor_status = command;
-    if(command == "TURN_RIGHT")
-    {
-        md.setSpeeds(rpmToSpeed(80, false), -1*rpmToSpeed(80, true));
-        delay(this->commandPeriod);
-        md.setBrakes(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
-    }
-    else if(command == "TURN_LEFT")
-    {
-        md.setSpeeds(-1*rpmToSpeed(80, false), rpmToSpeed(80, true));
-        delay(this->commandPeriod);
-        md.setBrakes(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
-    }
-    else if(command == "FORWARD")
+    if(command == "FORWARD")
     {
         float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
         this->moveForward(rpm);
-        this->startTime = millis();
-        while(millis() < this->startTime + this->commandPeriod) {
+        while(tick < this->commandPeriod) {
+//          Serial.println(tick);
           this->adjustSpeed(true);
         }
         md.setBrakes(400,400);
-        //md.setBrakes(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
+        this->resetError();
     }
     else if(command == "BACKWARD")
     {
         float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
         this->moveBackward(rpm);
-        this->startTime = millis();
-        while(millis() < this->startTime + this->commandPeriod) {
+        while(tick < this->commandPeriod) {
           this->adjustSpeed(false);
         }
         md.setBrakes(400,400);
-        //md.setBrakes(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
+        this->resetError();
     }
     else if(command == "ROTATE_RIGHT")
     {
         float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
         md.setSpeeds(rpmToSpeed(rpm, false), -1*rpmToSpeed(rpm, true));
-        delay(this->commandPeriod);
+        while(tick < this->commandPeriod) {
+          Serial.print("");
+        }
         md.setBrakes(400,400);      
     }
     else if(command == "ROTATE_LEFT")
     {
         float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
         md.setSpeeds(-1*rpmToSpeed(rpm, false), rpmToSpeed(rpm, true));
-        delay(this->commandPeriod);
+        while(tick < this->commandPeriod) {
+          Serial.print("");
+        }
         md.setBrakes(400,400);      
     }
+    tick = 0;
 } 
 
 void Motor::moveForward(float input_rpm)
@@ -197,10 +191,8 @@ String Motor::getSubString(String data, char separator, int index) {
 }
 
 long Motor::getMoveTime(float rpm, float num_cell) {
-  float speed_in_cm_ms = (Pi*WHEEL_DIAMETER*rpm) / 60000;
-  long moveTime = (num_cell * CELL_SIZE) / (speed_in_cm_ms);
-  long offset = dis_time_m * num_cell + dis_time_c;
-  return moveTime + offset;
+  //long offset = dis_time_m * num_cell + dis_time_c;
+  return (num_cell*CELL_SIZE*TPR_new)/(Pi*WHEEL_DIAMETER);
 }
 
 long Motor::getRotateTime(float rpm, float degree, bool isRight) {
@@ -214,40 +206,44 @@ long Motor::getRotateTime(float rpm, float degree, bool isRight) {
   {
     offset = rotate_l_m*(degree) + rotate_l_c;
   }
-  return moveTime + offset;
+  return ((BASE_DIAMETER*degree*TPR_new)/(360*WHEEL_DIAMETER)) + offset;
 }
 
 long Motor::getPeriod(String full_command) {
   String command = getSubString(full_command, ' ', 0);
+  float rpm =  getSubString(full_command, ' ', 1).toFloat();
   if(command == "FORWARD" || command == "BACKWARD")
   {
-    float rpm =  getSubString(full_command, ' ', 1).toFloat();
     float num_cell =  getSubString(full_command, ' ', 2).toFloat();
-    return getMoveTime(rpm, num_cell);
+    return getMoveTime(rpm, num_cell)*BATT_VOLT_SCALE;
   }
   else if(command == "ROTATE_RIGHT")
   {
-    float rpm =  getSubString(full_command, ' ', 1).toFloat();
     float degree =  getSubString(full_command, ' ', 2).toFloat();
     return getRotateTime(rpm, degree, true);
   }
   else if(command == "ROTATE_LEFT")
   {
-    float rpm =  getSubString(full_command, ' ', 1).toFloat();
     float degree =  getSubString(full_command, ' ', 2).toFloat();
     return getRotateTime(rpm, degree, false);
-  }
-  else if(command == "TURN_RIGHT")
-  {
-    return 620;
-  }
-  else if(command == "TURN_LEFT")
-  {
-    return 640;
   }
   else
   {
     return getSubString(full_command, ' ', 1).toInt();
   }
+}
+
+void Motor::resetError()
+{
+  this->last_last_error_e1 = 0;
+  this->last_last_error_e2 = 0;
+  this->last_error_e1 = 0;
+  this->last_error_e2 = 0;
+  this->error_e1 = 0;
+  this->error_e2 = 0;
+}
+
+void incrementTick() {
+  tick += 1;
 }
 

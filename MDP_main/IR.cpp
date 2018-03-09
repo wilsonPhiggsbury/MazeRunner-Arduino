@@ -13,10 +13,16 @@ IR::IR(int id)
 
 float IR::takeReading(bool convertToDist)
 {
-	float voltageMedians[SAMPLES];
+//  disable a reading on purpose
+//  if(this->id == 3)
+//  {
+//    this->reading = 0;
+//    return 0;
+//  }
+	int voltageMedians[SAMPLES];
 	for(int j=0; j<SAMPLES; j++)
   {
-	  voltageMedians[j] = analogRead(this->id)*5.0/1024.0;
+	  voltageMedians[j] = analogRead(this->id);
   }
   this->reading = takeMedian(voltageMedians);
   if(convertToDist)
@@ -27,12 +33,12 @@ float IR::takeReading(bool convertToDist)
 	return this->reading;
 } 
 
-float IR::takeMedian(float nums[SAMPLES])
+int IR::takeMedian(int nums[SAMPLES])
 {
   // insertion sort the nums array
 	for(int i=1; i<SAMPLES; i++)
 	{
-		float tmp;
+		int tmp;
 		// swap values until previous value is not larger than next value
 		int j = i;
 		while(j!=0 && nums[j] < nums[j-1])
@@ -47,84 +53,130 @@ float IR::takeMedian(float nums[SAMPLES])
 	// take the middle value
 	return nums[(SAMPLES-1)/2];
 }
-float IR::fitCurve()
+int IR::fitCurve()
 {
-	float dist,bound;
-	float x = this->reading;
+	int dist,bound;
+	int x = this->reading;
 	switch(this->id)
 	{
 	case 0: // L front
-	bound = 3.5;
-	dist = logisticFit(x, 229.46929, -0.70569, 0.02349, 1.22789);
+	bound = 350;
+	dist = logisticFit(x, 3980.64967, -60.66538, 24.73956, 1.35595);
 	break;
 	case 1: // M front
-	bound = 3.5;
-	dist = logisticFit(x, 3.32477, -0.31000, 1.02698, 2.92285);
+	bound = 350;
+	dist = logisticFit(x, 332.47702, -30.99956, 210.32544, 2.92285);
 	break;
 	case 2: // R front
-	bound = 3.5;
-	dist = logisticFit(x, 8.39383, -1.11558, 0.65428, 1.39961);
+	bound = 350;
+	dist = logisticFit(x, 839.38251, -111.55843, 133.99694, 1.39961);
 	break;
 	case 3: // R back (side, short)
-	bound = 3.5;
-	dist = cubicFit(x, 19.65885, -20.7995, 8.34963, -1.20879);
+	bound = 350;
+	dist = 900;//cubicFit(x, 1965.88511, -10.15601, 0.01991, -1.40721e-5);
 	break;
 	case 4: // R front (side, short)
-	bound = 2.5;
-	dist = logisticFit(x, 14.56058, -0.97428, 0.30062, 1.45322);
+	bound = 250;
+	dist = cubicFit(x, 815.83317, -5.8258, 0.01505, -1.40109e-5);
 	// dist = logisticFit(x, 67.28591, -1.10478, 0.06223, 1.17884);
 	break;
 	case 5:
-	bound = 2.5; // L front (side, long)
-	dist = logisticFit(x, 154.43877, -0.66568, 0.07746, 1.59525);
+	bound = 250; // L front (side, long)
+	dist = cubicFit(x, 985.90138, -6.45298, 0.01508, -1.23553e-5);
 	break;
 	}
 
 	if(dist>=bound)
-		return 9;
+		return 900;
 	else
 		return dist;
 }
-float IR::correction()
+int IR::correction()
 {
-  if(this->reading == 9)
-    return 9;
-	float correctedVal = this->reading;
+  if(this->reading == 900)
+    return 900;
+	int correctedVal = this->reading;
+  const int FL_offsets[4] = {1,10,6,5};
+  const int FM_offsets[4] = {4,9,11,57};
+  const int FR_offsets[4] = {5,2,15,47};
+  const int S_FL_offsets[4] = {0,0,0,0};
+  const int S_FR_offsets[4] = {-4,-5,-12,-12};
+  const int S_BR_offsets[4] = {-6,-10,-25,-25};
 	switch(this->id)
 	{
-		case 0:// offset
-			if(correctedVal<1)
-				correctedVal += 0.1*this->reading;
-			else
-				correctedVal += 0.1;
-		break;
-		case 1: // scale up only in range [0,1]
-			correctedVal += (0.5*this->reading/3);
-		break;
-		case 2: // scale down
-//			if(correctedVal>2)
-//				correctedVal += 0.5*(this->reading-2);
-      correctedVal += 0.03;
-		break;
+//		case 0:// offset
+//      if(correctedVal<100)
+//        correctedVal += 20*(this->reading/100);
+//      else if(correctedVal<200)
+//        correctedVal += (20*(200-this->reading)/100);
+//    break;
+//    case 1: // scale up only in range [0,1]
+//      correctedVal += (50*this->reading/300);
+//    break;
+//    case 2: // scale down
+////      if(correctedVal>200)
+////        correctedVal += 50*(this->reading-200);
+//      if(correctedVal<100)
+//        correctedVal += 30;
+//      if(correctedVal < 200)
+//        correctedVal += 25*(this->reading-100)/100;
+//      else if(correctedVal < 300)
+//        correctedVal += 70*(this->reading-200)/100;
+//    break;
+    case 0:// offset
+    correctedVal = scaleByInterval(correctedVal,FL_offsets);
+    break;
+    case 1: // scale up only in range [0,1]
+    correctedVal = scaleByInterval(correctedVal,FM_offsets);
+    break;
+    case 2: // scale down
+    correctedVal = scaleByInterval(correctedVal,FR_offsets);
+    break;
 		case 3:
-       
+    correctedVal = scaleByInterval(correctedVal,S_FL_offsets);
 		break;
 		case 4:
-      correctedVal -= 0.03;
+    correctedVal = scaleByInterval(correctedVal,S_FR_offsets);
 		break;
 		case 5:
-		  correctedVal -= 0.04;
+    correctedVal = scaleByInterval(correctedVal,S_BR_offsets);
 		break;
 	}
 	return correctedVal;
 }
-static float IR::logisticFit(float x, float A1, float A2, float x0, float p)
+static int IR::scaleByInterval(int variableToScale, int target[4])
 {
-	return (A2 + (A1-A2)/(1+pow(x/x0,p)));
+  int offset[4];
+  for(int i=0;i<4;i++)
+  {
+    //offset[i] = i*100 - target[i];
+    offset[i] = target[i];
+  }
+  if(variableToScale<100)
+  {
+    variableToScale += (offset[0])+(offset[1]-offset[0])*(variableToScale-0)/100;
+  }
+  else if(variableToScale<200)
+  {
+    variableToScale += (offset[1])+(offset[2]-offset[1])*(variableToScale-100)/100;
+  }
+  else if(variableToScale<300)
+  {
+    variableToScale += (offset[2])+(offset[3]-offset[2])*(variableToScale-200)/100;
+  }
+  else
+  {
+    variableToScale += (offset[3]);
+  }
+  return variableToScale;
 }
-static float IR::cubicFit(float x, float A, float B, float C, float D)
+static int IR::logisticFit(int x, float A1, float A2, float x0, float p)
 {
-	return (A + B*x + C*pow(x,2) + D*pow(x,3));
+	return int(A2 + (A1-A2)/(1+pow(float(x)/x0,p)));
+}
+static int IR::cubicFit(int x, float A, float B, float C, float D)
+{
+	return int(A + B*float(x) + C*pow(float(x),2) + D*pow(float(x),3));
 }
 // static float IR::power2Fit(float x, float xc, float A, float pl)
 // {
