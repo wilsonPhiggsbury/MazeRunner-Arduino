@@ -14,7 +14,7 @@ long startTime = 0;
 long commandPeriod = 0;
 
 const char* commands[] = {
-  "ROTATE_LEFT 80 360"
+  "FORWARD 105 10"
   };
 
 unsigned int command_index = 0;
@@ -33,5 +33,5 @@ void loop() {
   motor->command(commands[command_index]);
   command_index++;
   command_index %= 1;
-  delay(2000);
+  delay(1000);
 }

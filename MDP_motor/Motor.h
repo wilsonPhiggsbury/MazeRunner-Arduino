@@ -1,7 +1,9 @@
 #include "DualVNH5019MotorShield.h"
 
 const int NUM_SAMPLES = 17;
-const float RPM_CONVERSION = 120/(2249*0.000001);
+const int TPR = 2249; //Tick Per Rotation
+const int TPR_new = 535; //Tick Per Rotation
+const float RPM_CONVERSION = 120/(TPR*0.000001);
 const float CELL_SIZE = 10.0; //cm
 const float WHEEL_DIAMETER = 6.0; //cm
 const float BASE_DIAMETER = 17.0; //cm
@@ -12,9 +14,9 @@ const float k1_e1 = 0.03;
 const float k2_e1 = -0.03;
 const float k3_e1 = 0.03;
 //PID constant for E2
-const float k1_e2 = 0.06;
-const float k2_e2 = -0.06;
-const float k3_e2 = 0.06;
+const float k1_e2 = 0.03;
+const float k2_e2 = -0.03;
+const float k3_e2 = 0.03;
 
 //Motor Charac
 const float E1M = 0.31851837820234463;
@@ -33,8 +35,8 @@ const float rotate_l_m = 0.15873015873;
 const float rotate_l_c = 25.7142857143;
 
 //distance time offset
-const float dis_time_m = 5.71428571429;
-const float dis_time_c = 14.2857142857;
+const float dis_time_m = 56.25;
+const float dis_time_c = -56.25;
 
 class Motor
 {
@@ -77,3 +79,6 @@ class Motor
         long getPeriod(String full_command);
         void resetError();
 };
+
+static long tick = 0;
+void incrementTick();
