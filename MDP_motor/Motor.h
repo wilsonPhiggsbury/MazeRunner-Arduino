@@ -2,7 +2,7 @@
 
 const int NUM_SAMPLES = 17;
 const int TPR = 2249; //Tick Per Rotation
-const int TPR_new = 535; //Tick Per Rotation
+const int TPR_new = 520; //Tick Per Rotation
 const float RPM_CONVERSION = 120/(TPR*0.000001);
 const float CELL_SIZE = 10.0; //cm
 const float WHEEL_DIAMETER = 6.0; //cm
@@ -29,10 +29,10 @@ const float e1_offset = 0;
 const float e2_offset = 0;
 
 //rotation time offset
-const float rotate_r_m = -0.22222222222;
-const float rotate_r_c = 160;
-const float rotate_l_m = 0.15873015873;
-const float rotate_l_c = 25.7142857143;
+const float rotate_r_m = 0.44444444444;
+const float rotate_r_c = -20;
+const float rotate_l_m = 0.44444444444;
+const float rotate_l_c = -20;
 
 //distance time offset
 const float dis_time_m = 56.25;
@@ -59,7 +59,6 @@ class Motor
         float last_error_e2;
         float last_last_error_e1;
         float last_last_error_e2;
-        long startTime;
         long commandPeriod;
         
     public:

@@ -8,7 +8,7 @@
 Motor::Motor(int E1A, int E1B, int E2A, int E2B)
 {
     md.init();
-    attachInterrupt(digitalPinToInterrupt(E1A), incrementTick, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(E1A), incrementTick, RISING);
     this->desired_rpm = 0;
     this->input_rpm_e1 = 0;
     this->input_rpm_e2 = 0;
@@ -23,7 +23,6 @@ Motor::Motor(int E1A, int E1B, int E2A, int E2B)
     this->last_last_error_e1 = 0;
     this->last_last_error_e2 = 0;
     this->motor_status = "FORWARD";
-    this->startTime = 0;
     this->commandPeriod = 0;
     tick = 0;
 }
@@ -37,7 +36,6 @@ void Motor::command(String fullCommand)
     {
         float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
         this->moveForward(rpm);
-        this->startTime = millis();
         while(tick < this->commandPeriod) {
           Serial.println(tick);
           this->adjustSpeed(true);
@@ -49,7 +47,6 @@ void Motor::command(String fullCommand)
     {
         float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
         this->moveBackward(rpm);
-        this->startTime = millis();
         while(tick < this->commandPeriod) {
           this->adjustSpeed(false);
         }
@@ -60,14 +57,18 @@ void Motor::command(String fullCommand)
     {
         float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
         md.setSpeeds(rpmToSpeed(rpm, false), -1*rpmToSpeed(rpm, true));
-        delay(this->commandPeriod);
+        while(tick < this->commandPeriod) {
+          Serial.print("");
+        }
         md.setBrakes(400,400);      
     }
     else if(command == "ROTATE_LEFT")
     {
         float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
         md.setSpeeds(-1*rpmToSpeed(rpm, false), rpmToSpeed(rpm, true));
-        delay(this->commandPeriod);
+        while(tick < this->commandPeriod) {
+          Serial.print("");
+        }
         md.setBrakes(400,400);      
     }
     tick = 0;
@@ -189,8 +190,8 @@ String Motor::getSubString(String data, char separator, int index) {
 }
 
 long Motor::getMoveTime(float rpm, float num_cell) {
-  long offset = dis_time_m * num_cell + dis_time_c;
-  return num_cell*TPR_new + offset;
+  //long offset = dis_time_m * num_cell + dis_time_c;
+  return (num_cell*CELL_SIZE*TPR_new)/(Pi*WHEEL_DIAMETER);
 }
 
 long Motor::getRotateTime(float rpm, float degree, bool isRight) {
@@ -203,9 +204,8 @@ long Motor::getRotateTime(float rpm, float degree, bool isRight) {
   else
   {
     offset = rotate_l_m*(degree) + rotate_l_c;
-    offset = 50;
   }
-  return moveTime + offset;
+  return ((BASE_DIAMETER*degree*TPR_new)/(360*WHEEL_DIAMETER)) + offset;
 }
 
 long Motor::getPeriod(String full_command) {

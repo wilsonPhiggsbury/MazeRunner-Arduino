@@ -14,7 +14,7 @@ long startTime = 0;
 long commandPeriod = 0;
 
 const char* commands[] = {
-  "FORWARD 105 10"
+  "ROTATE_LEFT 105 180"
   };
 
 unsigned int command_index = 0;
