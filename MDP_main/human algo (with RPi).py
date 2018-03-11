@@ -39,8 +39,8 @@ class TcpClient():
 client = TcpClient("192.168.7.1", 77)
 client.connect()
 
-print("Debug: ")
-b = input()
+##print("Debug: ")
+b = 'y'
 if(b=='y'):
 
     debug = True

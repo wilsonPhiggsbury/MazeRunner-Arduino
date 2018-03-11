@@ -6,6 +6,9 @@
 #endif
 
 
+
+
+
 IR::IR(int id)
 {
 	this->id = id;
@@ -59,33 +62,33 @@ int IR::fitCurve()
 	int x = this->reading;
 	switch(this->id)
 	{
-	case 0: // L front
-	bound = 350;
+	case FL:
+  bound = FL_LIMIT;
 	dist = logisticFit(x, 3980.64967, -60.66538, 24.73956, 1.35595);
 	break;
-	case 1: // M front
-	bound = 350;
+	case FM:
+  bound = FM_LIMIT;
 	dist = logisticFit(x, 332.47702, -30.99956, 210.32544, 2.92285);
 	break;
-	case 2: // R front
-	bound = 350;
+	case FR:
+  bound = FR_LIMIT;
 	dist = logisticFit(x, 839.38251, -111.55843, 133.99694, 1.39961);
 	break;
-	case 3: // R back (side, short)
-	bound = 350;
+	case S_FL:
+  bound = S_FL_LIMIT;
 	dist = 900;//cubicFit(x, 1965.88511, -10.15601, 0.01991, -1.40721e-5);
 	break;
-	case 4: // R front (side, short)
-	bound = 250;
+	case S_FR:
+  bound = S_FR_LIMIT;
 	dist = cubicFit(x, 815.83317, -5.8258, 0.01505, -1.40109e-5);
 	// dist = logisticFit(x, 67.28591, -1.10478, 0.06223, 1.17884);
 	break;
-	case 5:
-	bound = 250; // L front (side, long)
+	case S_BR:
+  bound = S_BR_LIMIT;
 	dist = cubicFit(x, 985.90138, -6.45298, 0.01508, -1.23553e-5);
 	break;
 	}
-
+  bound += 50;
 	if(dist>=bound)
 		return 900;
 	else
@@ -93,71 +96,48 @@ int IR::fitCurve()
 }
 int IR::correction()
 {
+  int correctedVal = this->reading;
   if(this->reading == 900)
     return 900;
-	int correctedVal = this->reading;
-  const int start = -50;
-  const int interval = 50;
-  const int FL_offsets[8] = {-50,0,50,100,150,200,250,300};
-  const int FM_offsets[8] = {-50,0,50,100,150,200,250,300};
-  const int FR_offsets[8] = {-50,0,50,100,150,200,250,300};
-  const int S_FL_offsets[8] = {-50,0,50,100,150,200,250,300};
-  const int S_FR_offsets[8] = {-50,0,50,100,150,200,250,300};
-  const int S_BR_offsets[8] = {-50,0,50,100,150,200,250,300};
+	
+  Serial.print(this->id);
+  Serial.print(". "+String(correctedVal));
 	switch(this->id)
 	{
-//		case 0:// offset
-//      if(correctedVal<100)
-//        correctedVal += 20*(this->reading/100);
-//      else if(correctedVal<200)
-//        correctedVal += (20*(200-this->reading)/100);
-//    break;
-//    case 1: // scale up only in range [0,1]
-//      correctedVal += (50*this->reading/300);
-//    break;
-//    case 2: // scale down
-////      if(correctedVal>200)
-////        correctedVal += 50*(this->reading-200);
-//      if(correctedVal<100)
-//        correctedVal += 30;
-//      if(correctedVal < 200)
-//        correctedVal += 25*(this->reading-100)/100;
-//      else if(correctedVal < 300)
-//        correctedVal += 70*(this->reading-200)/100;
-//    break;
-    case 0:// offset
-    correctedVal = scaleByInterval(correctedVal,FL_offsets,start,interval);
+    case FL:
+    correctedVal = scaleByInterval(correctedVal,FL_offsets,START,INTERVAL,FL_LIMIT);
     break;
-    case 1: // scale up only in range [0,1]
-    correctedVal = scaleByInterval(correctedVal,FM_offsets,start,interval);
+    case FM:
+    correctedVal = scaleByInterval(correctedVal,FM_offsets,START,INTERVAL,FM_LIMIT);
     break;
-    case 2: // scale down
-    correctedVal = scaleByInterval(correctedVal,FR_offsets,start,interval);
+    case FR:
+    correctedVal = scaleByInterval(correctedVal,FR_offsets,START,INTERVAL,FR_LIMIT);
     break;
-		case 3:
-    correctedVal = scaleByInterval(correctedVal,S_FL_offsets,start,interval);
+		case S_FL:
+    correctedVal = scaleByInterval(correctedVal,S_FL_offsets,START,INTERVAL,S_FL_LIMIT);
 		break;
-		case 4:
-    correctedVal = scaleByInterval(correctedVal,S_FR_offsets,start,interval);
+		case S_FR:
+    correctedVal = scaleByInterval(correctedVal,S_FR_offsets,START,INTERVAL,S_FR_LIMIT);
 		break;
-		case 5:
-    correctedVal = scaleByInterval(correctedVal,S_BR_offsets,start,interval);
+		case S_BR:
+    correctedVal = scaleByInterval(correctedVal,S_BR_offsets,START,INTERVAL,S_BR_LIMIT);
 		break;
 	}
+  Serial.println(">>"+String(correctedVal));
 	return correctedVal;
 }
-static int IR::scaleByInterval(int variableToScale, int readings[], int start, int interval)
+static int IR::scaleByInterval(int variableToScale, int readings[], int start, int interval, int limit)
 {
-  int maxIndex = (300-start)/interval + 1; // 8 for -50~300 + 50, 4 for 0~300 +100
+  int maxIndex = (limit-start)/interval + 1; // 8 for -50~300 + 50, 4 for 0~300 +100
   int offset[maxIndex];
   int i;
-  // Actual V.S. Ideal
+  // Actual Versus Ideal
   // readings[5] stands for : ACTUAL values at range -121, 5, 34, ..., 218
   // to generate IDEAL numbers, use i*50: ideal ranges -50, 0, 50, ..., 300
   // get the offset, required to scale by how much?
   for(i=0;i<maxIndex;i++)
   {
-    offset[i] = i*interval - readings[i];
+    offset[i] = i*interval + start - readings[i];
     //offset[i] = readings[i];
   }
   // proceed to determine which range the ACTUAL value falls in [-50,0] or [0,50] or ... or [250,300]

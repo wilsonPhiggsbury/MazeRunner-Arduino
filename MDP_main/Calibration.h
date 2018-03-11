@@ -7,7 +7,7 @@ class Calibration
 		IR *IR_sensors[6];
 		Motor *motor;
     // main internal functions
-    bool calibrateRotation(char front_or_side);
+    void calibrateRotation(char front_or_side);
     void calibrateDisplacement(int distToObstacle, char front_or_side);
     void calibrateDisplacement_forRotation();
     // subroutines & utilities
@@ -20,6 +20,5 @@ class Calibration
 		Calibration(IR *IR_sensors[6], Motor *motor, bool debug);
     int doCalibrationSet(int distInTheory, char front_or_side);
     void toggleDebug();
-
 		void informTurn(bool right);
 };

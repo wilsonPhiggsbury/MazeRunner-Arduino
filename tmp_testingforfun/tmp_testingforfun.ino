@@ -9,7 +9,7 @@ void setup() {
 }
 
 void loop() {
-  Serial.println(extractLast(arr,6),DEC);
+  Serial.println(extractLast({0,4,3,2,1,9},6),DEC);
   Serial.println(round(-0.5));
 //  Serial.println(String(atan2(2*sqrt(3),2)/PI*180,2));
 //  Serial.println(String(YAAH,2));

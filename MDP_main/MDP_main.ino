@@ -5,7 +5,7 @@
 #define LEFT 0
 #define RIGHT 1
 
-#define DEFAULT_RPM "105 "
+const String DEFAULT_RPM = "105 ";
 
 /*
  * Algo set of commands:
