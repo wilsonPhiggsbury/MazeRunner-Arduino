@@ -38,27 +38,39 @@ class TcpClient():
 
 client = TcpClient("192.168.7.1", 77)
 client.connect()
-b=''
-eol = '\n'
 
+eol = '\n'
+print("Debug: ")
+b = input()
+if(b=='y'):
+
+    debug = True
+else:
+    debug = False
+
+b=''
 while True:
     a = str(input())
     if a=='D':
-        if eol=='EOL':
+        debug = not debug
+        if debug:
             eol = '\n'
         else:
             eol = 'EOL'
     client.send(a)
-    while True:
-        print('Collecting input...')
-        sleep(0.5)
-        b += client.recv()
+    if debug:
         
-        if b.find('EOL')!=-1:
-            print("___________________________")
-            print(b.replace('EOL',''))
-            b = ""
-            break
-##    sleep(3)
-##    b = client.recv()
-##    print(b)
+        while True:
+            print('Collecting input...')
+            sleep(0.5)
+            b += client.recv()
+            
+            if b.find('EOL')!=-1:
+                print("___________________________")
+                print(b.replace('EOL',''))
+                b = ""
+                break
+    else:
+        sleep(3)
+        b = client.recv()
+        print(b)

@@ -16,7 +16,7 @@ float IR::takeReading(bool convertToDist)
 	float voltageMedians[SAMPLES];
 	for(int j=0; j<SAMPLES; j++)
   {
-	  voltageMedians[j] = analogRead(this->id)*5.0/1024.0;
+	  voltageMedians[j] = analogRead(this->id);
   }
   this->reading = takeMedian(voltageMedians);
   if(convertToDist)
@@ -54,66 +54,66 @@ float IR::fitCurve()
 	switch(this->id)
 	{
 	case 0: // L front
-	bound = 3.5;
-	dist = logisticFit(x, 229.46929, -0.70569, 0.02349, 1.22789);
+	bound = 350;
+	dist = logisticFit(x, 3980.64967, -60.66538, 24.73956, 1.35595);
 	break;
 	case 1: // M front
-	bound = 3.5;
-	dist = logisticFit(x, 3.32477, -0.31000, 1.02698, 2.92285);
+	bound = 250;
+	dist = logisticFit(x, 332.47702, -30.99956, 210.32544, 2.92285);
 	break;
 	case 2: // R front
-	bound = 3.5;
-	dist = logisticFit(x, 8.39383, -1.11558, 0.65428, 1.39961);
+	bound = 350;
+	dist = logisticFit(x, 839.38251, -111.55843, 133.99694, 1.39961);
 	break;
 	case 3: // R back (side, short)
-	bound = 5.5;
-	dist = cubicFit(x, 19.65885, -20.7995, 8.34963, -1.20879);
+	bound = 350;
+	dist = cubicFit(x, 1965.88511, -10.15601, 0.01991, -1.40721e-5);
 	break;
 	case 4: // R front (side, short)
-	bound = 2.5;
-	dist = logisticFit(x, 14.56058, -0.97428, 0.30062, 1.45322);
+	bound = 250;
+	dist = cubicFit(x, 815.83317, -5.8258, 0.01505, -1.40109e-5);
 	// dist = logisticFit(x, 67.28591, -1.10478, 0.06223, 1.17884);
 	break;
 	case 5:
-	bound = 2.5; // L front (side, long)
-	dist = logisticFit(x, 154.43877, -0.66568, 0.07746, 1.59525);
+	bound = 250; // L front (side, long)
+	dist = cubicFit(x, 985.90138, -6.45298, 0.01508, -1.23553e-5);
 	break;
 	}
 
 	if(dist>=bound)
-		return 9;
+		return 900;
 	else
 		return dist;
 }
 float IR::correction()
 {
-  if(this->reading == 9)
-    return 9;
-	float correctedVal = this->reading;
+  if(this->reading == 900)
+    return 900;
+	int correctedVal = this->reading;
 	switch(this->id)
 	{
 		case 0:// offset
-			if(correctedVal<1)
-				correctedVal += 0.1*this->reading;
+			if(correctedVal<100)
+				correctedVal += 10*(this->reading/100);
 			else
-				correctedVal += 0.1;
+				correctedVal += 10;
 		break;
 		case 1: // scale up only in range [0,1]
-			correctedVal += (0.5*this->reading/3);
+			correctedVal += (50*this->reading/300);
 		break;
 		case 2: // scale down
-//			if(correctedVal>2)
-//				correctedVal += 0.5*(this->reading-2);
-      correctedVal += 0.03;
+//			if(correctedVal>200)
+//				correctedVal += 50*(this->reading-200);
+      correctedVal += 3;
 		break;
 		case 3:
        
 		break;
 		case 4:
-      correctedVal -= 0.03;
+      correctedVal -= 3;
 		break;
 		case 5:
-		  correctedVal -= 0.04;
+		  correctedVal -= 4;
 		break;
 	}
 	return correctedVal;
