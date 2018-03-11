@@ -14,7 +14,14 @@ long startTime = 0;
 long commandPeriod = 0;
 
 const char* commands[] = {
-  "ROTATE_LEFT 105 180"
+  "ROTATE_LEFT 105 90",
+  "ROTATE_RIGHT 105 90",
+  "FORWARD 105 3",
+  // new command
+  "FORWARD 105", // forward without stopping
+  "ROTATE_LEFT 105", // rotate left without stopping
+  "ROTATE_RIGHT 105", // rotate right without stopping
+  "STOP" // stop
   };
 
 unsigned int command_index = 0;
@@ -32,6 +39,6 @@ void setup() {
 void loop() {
   motor->command(commands[command_index]);
   command_index++;
-  command_index %= 1;
+  command_index %= 6;
   delay(1000);
 }
