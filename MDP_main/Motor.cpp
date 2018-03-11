@@ -5,7 +5,7 @@
 #include "WProgram.h"
 #endif
 
-#define BATT_VOLT_SCALE 0.5
+#define BATT_VOLT_SCALE 1
 Motor::Motor(int E1A, int E1B, int E2A, int E2B)
 {
     md.init();

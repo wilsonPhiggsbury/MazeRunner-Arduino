@@ -96,12 +96,14 @@ int IR::correction()
   if(this->reading == 900)
     return 900;
 	int correctedVal = this->reading;
-  const int FL_offsets[4] = {1,10,6,5};
-  const int FM_offsets[4] = {4,9,11,57};
-  const int FR_offsets[4] = {5,2,15,47};
-  const int S_FL_offsets[4] = {0,0,0,0};
-  const int S_FR_offsets[4] = {-4,-5,-12,-12};
-  const int S_BR_offsets[4] = {-6,-10,-25,-25};
+  const int start = -50;
+  const int interval = 50;
+  const int FL_offsets[8] = {-50,0,50,100,150,200,250,300};
+  const int FM_offsets[8] = {-50,0,50,100,150,200,250,300};
+  const int FR_offsets[8] = {-50,0,50,100,150,200,250,300};
+  const int S_FL_offsets[8] = {-50,0,50,100,150,200,250,300};
+  const int S_FR_offsets[8] = {-50,0,50,100,150,200,250,300};
+  const int S_BR_offsets[8] = {-50,0,50,100,150,200,250,300};
 	switch(this->id)
 	{
 //		case 0:// offset
@@ -124,50 +126,73 @@ int IR::correction()
 //        correctedVal += 70*(this->reading-200)/100;
 //    break;
     case 0:// offset
-    correctedVal = scaleByInterval(correctedVal,FL_offsets);
+    correctedVal = scaleByInterval(correctedVal,FL_offsets,start,interval);
     break;
     case 1: // scale up only in range [0,1]
-    correctedVal = scaleByInterval(correctedVal,FM_offsets);
+    correctedVal = scaleByInterval(correctedVal,FM_offsets,start,interval);
     break;
     case 2: // scale down
-    correctedVal = scaleByInterval(correctedVal,FR_offsets);
+    correctedVal = scaleByInterval(correctedVal,FR_offsets,start,interval);
     break;
 		case 3:
-    correctedVal = scaleByInterval(correctedVal,S_FL_offsets);
+    correctedVal = scaleByInterval(correctedVal,S_FL_offsets,start,interval);
 		break;
 		case 4:
-    correctedVal = scaleByInterval(correctedVal,S_FR_offsets);
+    correctedVal = scaleByInterval(correctedVal,S_FR_offsets,start,interval);
 		break;
 		case 5:
-    correctedVal = scaleByInterval(correctedVal,S_BR_offsets);
+    correctedVal = scaleByInterval(correctedVal,S_BR_offsets,start,interval);
 		break;
 	}
 	return correctedVal;
 }
-static int IR::scaleByInterval(int variableToScale, int target[4])
+static int IR::scaleByInterval(int variableToScale, int readings[], int start, int interval)
 {
-  int offset[4];
-  for(int i=0;i<4;i++)
+  int maxIndex = (300-start)/interval + 1; // 8 for -50~300 + 50, 4 for 0~300 +100
+  int offset[maxIndex];
+  int i;
+  // Actual V.S. Ideal
+  // readings[5] stands for : ACTUAL values at range -121, 5, 34, ..., 218
+  // to generate IDEAL numbers, use i*50: ideal ranges -50, 0, 50, ..., 300
+  // get the offset, required to scale by how much?
+  for(i=0;i<maxIndex;i++)
   {
-    //offset[i] = i*100 - target[i];
-    offset[i] = target[i];
+    offset[i] = i*interval - readings[i];
+    //offset[i] = readings[i];
   }
-  if(variableToScale<100)
+  // proceed to determine which range the ACTUAL value falls in [-50,0] or [0,50] or ... or [250,300]
+  int variableIdealDist = start;
+  
+  i = 0;
+  while(variableToScale>=variableIdealDist)
   {
-    variableToScale += (offset[0])+(offset[1]-offset[0])*(variableToScale-0)/100;
+    variableIdealDist += interval;
+    i++;
+    if(i>maxIndex-1)return -1000;
   }
-  else if(variableToScale<200)
-  {
-    variableToScale += (offset[1])+(offset[2]-offset[1])*(variableToScale-100)/100;
-  }
-  else if(variableToScale<300)
-  {
-    variableToScale += (offset[2])+(offset[3]-offset[2])*(variableToScale-200)/100;
-  }
-  else
-  {
-    variableToScale += (offset[3]);
-  }
+  // compute offset, comes in form of (offset + offset_transition*scale)
+  if(i==maxIndex-1)variableToScale += (offset[i]);
+  else variableToScale += (offset[i]) + (offset[i+1]-offset[i])*(variableToScale-(variableIdealDist/interval-1));
+//  if(variableToScale < 0)
+//  {
+//    variableToScale += (offset[0])+(offset[1]-offset[0])*(variableToScale-(-100))/100;
+//  }
+//  else if(variableToScale<100)
+//  {
+//    variableToScale += (offset[1])+(offset[2]-offset[1])*(variableToScale-0)/100;
+//  }
+//  else if(variableToScale<200)
+//  {
+//    variableToScale += (offset[2])+(offset[3]-offset[3])*(variableToScale-100)/100;
+//  }
+//  else if(variableToScale<300)
+//  {
+//    variableToScale += (offset[3])+(offset[4]-offset[3])*(variableToScale-200)/100;
+//  }
+//  else
+//  {
+//    variableToScale += (offset[4]);
+//  }
   return variableToScale;
 }
 static int IR::logisticFit(int x, float A1, float A2, float x0, float p)

@@ -39,7 +39,6 @@ class TcpClient():
 client = TcpClient("192.168.7.1", 77)
 client.connect()
 
-eol = '\n'
 print("Debug: ")
 b = input()
 if(b=='y'):
@@ -47,6 +46,10 @@ if(b=='y'):
     debug = True
 else:
     debug = False
+if debug:
+    eol = '\n'
+else:
+    eol = 'EOL'
 
 b=''
 while True:
@@ -71,6 +74,6 @@ while True:
                 b = ""
                 break
     else:
-        sleep(3)
+        sleep(2)
         b = client.recv()
         print(b)

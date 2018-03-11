@@ -18,7 +18,7 @@
 // IR sensor calibration trusted range
 #define CALIBRATE_ROTATION_RANGE_FLO -15
 #define CALIBRATE_ROTATION_RANGE_FHI 120
-#define CALIBRATE_ROTATION_RANGE_SLO -220
+#define CALIBRATE_ROTATION_RANGE_SLO -20
 #define CALIBRATE_ROTATION_RANGE_SHI 110
 
 #define CALIBRATE_DISPLACEMENT_RANGE_FRONT 210 // SUBJ TO CHANGE (<)
@@ -65,9 +65,10 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
     if(IR_sensors[S_BR]->reading < IR_sensors[S_FR]->reading)
     {
       float turnDegree = atan2(IR_sensors[S_FR]->reading - IR_sensors[S_BR]->reading,SIDE_SENSOR_WIDTH) / PI * 150;
-      motor->command("ROTATE_RIGHT 20 "+String(round(turnDegree)));
+      motor->command("ROTATE_RIGHT 100 "+String(round(turnDegree)));
+      //if(DEBUG)Serial.println("Turn additional "+String(turnDegree,2));
     }
-    if(DEBUG)Serial.println("Switch to Front Calibrate");
+    //if(DEBUG)Serial.println("Switch to Front Calibrate");
     sideOutOfRotationRange = true;
     front_or_side = 'F';
   }
@@ -124,20 +125,20 @@ void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
   */
   // update readings, usually executed after rotated back to spot
   updateReadings();
-  if(DEBUG)Serial.println("3. ___DISPLACEMENT___");
+  //if(DEBUG)Serial.println("3. ___DISPLACEMENT___");
   if(front_or_side == 'F')
   {
     if(IR_sensors[FM]->reading<=CALIBRATE_DISPLACEMENT_RANGE_FRONT)
     {
       if(distToObstacle == -1)distToObstacle = round(IR_sensors[FM]->reading/100.0)*100;
       displacement_fixNow = distToObstacle - IR_sensors[FM]->reading;
-      if(DEBUG)Serial.print("Difference: " + String(displacement_fixNow));
+      //if(DEBUG)Serial.print("Difference: " + String(displacement_fixNow));
       
       fixDisplacement(true);
     }
     else
     {
-      if(DEBUG)Serial.println("Can't fix displacement: front sensor is too far from reliable range!");
+      //if(DEBUG)Serial.println("Can't fix displacement: front sensor is too far from reliable range!");
     }
   }
   else if(front_or_side == 'S')
@@ -146,7 +147,7 @@ void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
     {
       if(distToObstacle == -1)distToObstacle = round(IR_sensors[S_BR]->reading/100.0)*100;
       displacement_fixLater = distToObstacle - (IR_sensors[S_BR]->reading+IR_sensors[S_FR]->reading)/2;
-      if(DEBUG)Serial.println("Difference (Fix LATER): " + String(displacement_fixLater));
+      //if(DEBUG)Serial.println("Difference (Fix LATER): " + String(displacement_fixLater));
       // if unacceptable displacement, align yourself, don't wait for algo
       //HARDCODE
       if(displacement_fixLater < -40)
@@ -154,19 +155,19 @@ void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
         motor->command("ROTATE_LEFT 105 90");
         informTurn(false);
         motor->command("ROTATE_RIGHT 105 90");
-        if(DEBUG)Serial.println("Aligned TOWARDS wall without algo intervention.");
+        //if(DEBUG)Serial.println("Aligned TOWARDS wall without algo intervention.");
       }
       else if(displacement_fixLater > 40)
       {
         motor->command("ROTATE_RIGHT 105 90");
         informTurn(true);
         motor->command("ROTATE_LEFT 105 90");
-        if(DEBUG)Serial.println("Aligned AWAY FROM wall without algo intervention.");
+        //if(DEBUG)Serial.println("Aligned AWAY FROM wall without algo intervention.");
       }
     }
     else
     {
-      if(DEBUG)Serial.println("Can't fix displacement: side sensor is too far from reliable range!");
+      //if(DEBUG)Serial.println("Can't fix displacement: side sensor is too far from reliable range!");
     }
   }
 }
@@ -174,24 +175,24 @@ void Calibration::calibrateDisplacement_forRotation()
 {
   // only for front sensors!
   updateReadings();
-  if(DEBUG)Serial.println("1. ___DISPLACEMENT (FOR ROTATION)____");
+  //if(DEBUG)Serial.println("1. ___DISPLACEMENT (FOR ROTATION)____");
   if(round(IR_sensors[FM]->reading)<=CALIBRATE_DISPLACEMENT_RANGE_FRONT)
   {
     if(IR_sensors[FM]->reading <= CALIBRATE_ROTATION_RANGE_FLO)
     {
       displacement_fixNow = CALIBRATE_ROTATION_RANGE_FLO-IR_sensors[FM]->reading;
-      if(DEBUG)Serial.println("Need to retreat by "+String(displacement_fixNow));
+      //if(DEBUG)Serial.println("Need to retreat by "+String(displacement_fixNow));
     }
     else if(IR_sensors[FM]->reading >= CALIBRATE_ROTATION_RANGE_FHI)
     {
       displacement_fixNow = CALIBRATE_ROTATION_RANGE_FHI-IR_sensors[FM]->reading;
-      if(DEBUG)Serial.println("Need to advance by "+String(displacement_fixNow));
+      //if(DEBUG)Serial.println("Need to advance by "+String(displacement_fixNow));
     }
     fixDisplacement(false);
   }
   else
   {
-    if(DEBUG)Serial.println("Can't advance: front sensor is too far from reliable range!");
+    //if(DEBUG)Serial.println("Can't advance: front sensor is too far from reliable range!");
   }
 }
 void Calibration::fixDisplacement(bool useTolerance)
@@ -199,7 +200,7 @@ void Calibration::fixDisplacement(bool useTolerance)
   // fix errors recorded by displacement_fixNow
   
   const int tolerance = useTolerance? CALIBRATE_DISPLACEMENT_TOLERANCE:0;
-  if(DEBUG)Serial.println(" Tolerance: "+String(tolerance));
+  //if(DEBUG)Serial.println(" Tolerance: "+String(tolerance));
   //HARDCODE
    if(!useTolerance)// SUBJ TO CHANGE
    {
@@ -210,17 +211,17 @@ void Calibration::fixDisplacement(bool useTolerance)
    }
   if(displacement_fixNow > tolerance)
   {
-    motor->command("BACKWARD 60 " + String(float(abs(displacement_fixNow)/100.0)));
-    if(DEBUG)Serial.println("Distance is fixed by " + String(displacement_fixNow)+".");
+    motor->command("BACKWARD 105 " + String(float(abs(displacement_fixNow)/100.0)));
+    //if(DEBUG)Serial.println("Distance is fixed by " + String(displacement_fixNow)+".");
   }
   else if(displacement_fixNow < -tolerance)
   {
-    motor->command("FORWARD 60 " + String(float(abs(displacement_fixNow)/100.0)));
-    if(DEBUG)Serial.println("Distance is fixed by " + String(displacement_fixNow)+".");
+    motor->command("FORWARD 105 " + String(float(abs(displacement_fixNow)/100.0)));
+    //if(DEBUG)Serial.println("Distance is fixed by " + String(displacement_fixNow)+".");
   }
   else
   {
-    if(DEBUG)Serial.println("Distance is within tolerance.");
+    //if(DEBUG)Serial.println("Distance is within tolerance.");
   }
   displacement_fixNow = 0;
 }
@@ -230,7 +231,7 @@ bool Calibration::calibrateRotation_subroutine(int guardbound_l, int guardbound_
   float turnDegree;
   float scaleDownRotation = TURNDEG_INITSCALE;
   // Determine tolerance values
-  if(DEBUG)Serial.println("2. ___CALIBRATING ROTATION___");
+  //if(DEBUG)Serial.println("2. ___CALIBRATING ROTATION___");
 
   //HARDCODE
   if(dist > guardbound_l && dist < guardbound_h)
@@ -243,7 +244,7 @@ bool Calibration::calibrateRotation_subroutine(int guardbound_l, int guardbound_
       tolerance = CALIBRATE_ROTATION_TOLERANCE;
 
     diff = abs(IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading);
-    if(DEBUG)Serial.print("Difference: "+String(diff)+" Tolerance: "+String(tolerance));
+    //if(DEBUG)Serial.print("Difference: "+String(diff)+" Tolerance: "+String(tolerance));
     
     while(diff >= tolerance && scaleDownRotation > 0.6)
     {
@@ -253,35 +254,45 @@ bool Calibration::calibrateRotation_subroutine(int guardbound_l, int guardbound_
         turnDegree = TURNDEG_MIN;
       }
       turnDegree *= scaleDownRotation;
-      if(DEBUG)Serial.println("\nNeed calibrate. Turn Degree: "+String(turnDegree,2));
+      //if(DEBUG)Serial.println("\nNeed calibrate. Turn Degree: "+String(turnDegree,2));
       scaleDownRotation -= TURNDEG_SCALE;
+      String motorcommand;
       if(IR_sensors[sensor1]->reading < IR_sensors[sensor2]->reading)
-        motor->command("ROTATE_LEFT 20 "+String(round(turnDegree)));
+      {
+        motorcommand = "ROTATE_LEFT 100 "+String(turnDegree,0);
+        //if(DEBUG)Serial.println(motorcommand);
+        motor->command(motorcommand);
+      }
       else
-        motor->command("ROTATE_RIGHT 20 "+String(round(turnDegree)));
-
-      delay(500);
-      IR_sensors[sensor1]->takeReading(true);
-      IR_sensors[sensor2]->takeReading(true);
+      {
+        motorcommand = "ROTATE_RIGHT 100 "+String(turnDegree,0);
+        //if(DEBUG)Serial.println(motorcommand);
+        motor->command(motorcommand);
+      }
+      updateReadings();
       diff = abs(IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading);
     }
     
-    if(DEBUG)Serial.println("\nNo need calibrate, already straight.");
+    //if(DEBUG)Serial.println("\nNo need calibrate, already straight.");
     return true;
   }
   else
   {
-    if(dist > guardbound_h)
-      if(DEBUG)Serial.println("\nFail to calibrate rotation, sensors too FAR from obstacle. Sensor: "+String(sensor1)+" "+String(dist)+" Obstacle: "+String(guardbound_h));
-    else
-      if(DEBUG)Serial.println("\nFail to calibrate rotation, sensors too NEAR from obstacle. Sensor: "+String(dist)+" Obstacle: "+String(guardbound_l));
+    //if(dist > guardbound_h)
+      //if(DEBUG)Serial.println("\nFail to calibrate rotation, sensors too FAR from obstacle. Sensor: "+String(sensor1)+" "+String(dist)+" Obstacle: "+String(guardbound_h));
+    //else
+      //if(DEBUG)Serial.println("\nFail to calibrate rotation, sensors too NEAR from obstacle. Sensor: "+String(dist)+" Obstacle: "+String(guardbound_l));
     return false;
   }
 }
 void Calibration::updateReadings()
 {
-  delay(100);
+  delay(200);
   for(int i=0; i<6; i++)
+  {
     IR_sensors[i]->takeReading(true);
+    //Serial.print(String(IR_sensors[i]->reading)+"\t");
+  }
+  //Serial.println();
 }
 
