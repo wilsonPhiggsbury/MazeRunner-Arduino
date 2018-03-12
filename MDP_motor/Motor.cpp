@@ -43,11 +43,6 @@ void Motor::command(String fullCommand)
           md.setBrakes(400,400);
           this->resetError();
         }
-        else {
-          while(true) {
-            this->adjustSpeed(true);
-          }
-        }
     }
     else if(command == "BACKWARD")
     {
@@ -145,6 +140,8 @@ void Motor::adjustSpeed(bool isForward)
 
         float e1_reading = ((e1a_reading + e1b_reading) / 2.0) + e1_offset;
         float e2_reading = ((e2a_reading + e2b_reading) / 2.0) + e2_offset;
+
+        Serial.println(String(e1_reading) + "    " + String(e2_reading));
         
         this->last_last_error_e1 = this->last_error_e1;
         this->last_last_error_e2 = this->last_error_e2;
@@ -217,24 +214,26 @@ long Motor::getMoveTime(float rpm, float num_cell) {
   if(num_cell == 0){
     return 0;
   }
-  return (num_cell*CELL_SIZE*TPR_new)/(Pi*WHEEL_DIAMETER);
+  return num_cell*CPC;
 }
 
 long Motor::getRotateTime(float rpm, float degree, bool isRight) {
   if(degree == 0){
     return 0;
   }
-  long moveTime = (BASE_DIAMETER * degree * 1000) / (6*rpm*WHEEL_DIAMETER);
+  //long moveTime = (BASE_DIAMETER * degree * 1000) / (6*rpm*WHEEL_DIAMETER);
   long offset;
   if(isRight)
   {
     offset = rotate_r_m*(degree) + rotate_r_c;
+    offset = 15;
   }
   else
   {
     offset = rotate_l_m*(degree) + rotate_l_c;
+    offset = 5;
   }
-  return ((BASE_DIAMETER*degree*TPR_new)/(360*WHEEL_DIAMETER)) + offset;
+  return degree*CPD + offset;
 }
 
 long Motor::getPeriod(String full_command) {
