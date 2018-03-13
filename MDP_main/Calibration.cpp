@@ -43,8 +43,8 @@
 #define TURNDEG_SCALEDOWN 0.9 //to prevent coarse rotation from overshooting
 #define TURNDISPL_SCALEDOWN 0.9 //to prevent coarse displacement from overshooting
 
-const String DEFAULT_RPM = "105 ";
-const String SLOW_RPM = "20";
+const float DEFAULT_RPM = 105;
+const float SLOW_RPM = 20;
 
 // public ---------------------------------------------------------------
 Calibration::Calibration(IR *IR_sensors[6], Motor *motor, bool debug)
@@ -81,12 +81,12 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
 		if(IR_sensors[S_FR]->reading == 900 && IR_sensors[S_BR]->reading != 900)
 		{
 			fb_command = "BACKWARD ";
-			motor->command(fb_command + DEFAULT_RPM + "1");
+      motor->moveBackward(DEFAULT_RPM, 1);
 		}
 		else if(IR_sensors[S_FR]->reading != 900 && IR_sensors[S_BR]->reading == 900)
 		{
 			fb_command = "FORWARD ";
-			motor->command(fb_command + DEFAULT_RPM + "1");
+			motor->moveForward(DEFAULT_RPM, 1);
 		}
 		else if(IR_sensors[S_FR]->reading == 900 && IR_sensors[S_BR]->reading == 900)
 		{
@@ -98,7 +98,7 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
 		if(avgSideReading < ROTATION_RANGE_SLO || avgSideReading > ROTATION_RANGE_SHI)
 		{
 			fb_command = "ROTATE_RIGHT ";
-			motor->command(fb_command + DEFAULT_RPM + "90");
+			motor->rotateRight(DEFAULT_RPM, 90);
 			sideUseFrontCalibration = true;
 //      if(DEBUG)Serial.println("Switching to front calibration.");
       delay(300);
@@ -116,13 +116,13 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
 		{
 			fb_command = "BACKWARD ";
       //if(DEBUG)Serial.println("Backing into range, cells: "+String(float(ROTATION_RANGE_FLO-IR_sensors[FM]->reading)/100,2));
-			motor->command(fb_command + DEFAULT_RPM + String(float(ROTATION_RANGE_FLO-IR_sensors[FM]->reading)/100,2));
+			motor->moveBackward(DEFAULT_RPM, float(ROTATION_RANGE_FLO-IR_sensors[FM]->reading/100,2));
 		}
 		else if(IR_sensors[FM]->reading > ROTATION_RANGE_FHI)
 		{
 			fb_command = "FORWARD ";
       //if(DEBUG)Serial.println("Forward into range, cells: "+String(float(ROTATION_RANGE_FLO-IR_sensors[FM]->reading)/100,2));
-			motor->command(fb_command + DEFAULT_RPM + String(float(IR_sensors[FM]->reading-ROTATION_RANGE_FHI)/100,2));
+			motor->moveForward(DEFAULT_RPM, float(IR_sensors[FM]->reading-ROTATION_RANGE_FHI/100,2));
 		}
 		calibrateRotation('F');
 	}
@@ -133,7 +133,7 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
 
 	delay(250);
 	if(sideUseFrontCalibration)
-		motor->command("ROTATE_LEFT " + DEFAULT_RPM + "90");
+    motor->rotateLeft(DEFAULT_RPM, 90);
 	return 1;
 }
 void Calibration::informTurn(bool right)
@@ -142,7 +142,12 @@ void Calibration::informTurn(bool right)
 	String fb_command = right? "BACKWARD ":"FORWARD ";
 	if(displacement_fixLater != 0)
 	{
-	  motor->command(fb_command + DEFAULT_RPM + String(float(displacement_fixLater/100.0),2));
+    if(right){
+      motor->moveBackward(DEFAULT_RPM, float(displacement_fixLater/100.0,2));
+    }
+    else {
+      motor->moveForward(DEFAULT_RPM, float(displacement_fixLater/100.0,2));
+    }
     displacement_fixLater = 0;
 	}
 }
@@ -205,7 +210,12 @@ void Calibration::calibrateRotation(char front_or_side)
 	{
 		turnDegree = atan2(abs(diff),sensorwidth) / PI * 180 * TURNDEG_SCALEDOWN;
 		//if(DEBUG)Serial.println(String(turnDegree)+lr_command + DEFAULT_RPM + String(turnDegree,0));
-		motor->command(lr_command + DEFAULT_RPM + String(turnDegree,0));
+    if(diff > 0){
+      motor->rotateRight(DEFAULT_RPM, turnDegree);
+    }
+    else {
+      motor->rotateLeft(DEFAULT_RPM, turnDegree);
+    }
 	}
 	delay(200);
 	// _________________________________________ do fine calibration
@@ -219,7 +229,12 @@ void Calibration::calibrateRotation(char front_or_side)
 	if(abs(diff) > ROTATION_FINE_TOLERANCE*toleranceScale)
 	{
 		//if(DEBUG)Serial.println(lr_command + SLOW_RPM);
-		motor->command(lr_command + SLOW_RPM);
+   if(diff > 0) {
+     motor->rotateRight(SLOW_RPM, 0);
+   }
+   else {
+     motor->rotateLeft(SLOW_RPM, 0);
+   }
 	}
 	else
 		return;
@@ -230,7 +245,7 @@ void Calibration::calibrateRotation(char front_or_side)
 		//if(DEBUG)Serial.println(diff);
 	}while(abs(diff) > ROTATION_FINE_TOLERANCE);
 	//if(DEBUG)Serial.println("STOP");
-	motor->command("STOP");
+	motor->stopBot();
 }
 
 void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
@@ -253,7 +268,13 @@ void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
 		if(abs(diff) > DISPLACEMENT_ROUGH_TOLERANCE)
 		{
 			//if(DEBUG)Serial.println(lr_command + DEFAULT_RPM + String(float(diff*TURNDISPL_SCALEDOWN)/100.0,2));
-			motor->command(lr_command + DEFAULT_RPM + String(float(diff*TURNDISPL_SCALEDOWN)/100.0,2));
+      if(diff<0){
+        motor->moveForward(DEFAULT_RPM, float(diff*TURNDISPL_SCALEDOWN/100.0,2));
+      }
+      else {
+        motor->moveBackward(DEFAULT_RPM, float(diff*TURNDISPL_SCALEDOWN/100.0,2));
+      }
+			
 		}
     	delay(250);
 		// _________________________________________ do fine calibration
@@ -266,7 +287,13 @@ void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
 		if(abs(diff) > DISPLACEMENT_FINE_TOLERANCE)
 		{
 			//if(DEBUG)Serial.println(lr_command + SLOW_RPM);
-			motor->command(lr_command + SLOW_RPM);
+      if(diff < 0) {
+        motor->moveForward(SLOW_RPM, 0);
+      }
+      else {
+        motor->moveBackward(SLOW_RPM, 0);
+      }
+			
 		}
 		else
 			return;
@@ -277,7 +304,7 @@ void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
 			
 		}while(abs(diff) < DISPLACEMENT_FINE_TOLERANCE);
 		//if(DEBUG)Serial.println("STOP");
-		motor->command("STOP");
+		motor->stopBot();
 	}
 	else if(front_or_side == 'S')
 	{//if(DEBUG)Serial.println("DISPL Side");
@@ -286,10 +313,10 @@ void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
 		displacement_fixLater = distToObstacle - (IR_sensors[S_FR]->reading + IR_sensors[S_BR]->reading)/2;
 		if(abs(displacement_fixLater) > 40)
 		{
-			motor->command("ROTATE_LEFT 105 90");
+			motor->rotateLeft(105, 90);
 			informTurn(false);
 			delay(250);
-      motor->command("ROTATE_RIGHT 105 90");
+      motor->rotateRight(105, 90);
 		}
 	}
 }

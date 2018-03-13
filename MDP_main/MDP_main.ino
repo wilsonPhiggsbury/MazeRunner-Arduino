@@ -5,7 +5,7 @@
 #define LEFT 0
 #define RIGHT 1
 
-const String DEFAULT_RPM = "105 ";
+const float DEFAULT_RPM = 105;
 
 /*
  * Algo set of commands:
@@ -154,20 +154,20 @@ bool executeInstruction(String instr, int instr_len)
 {  
   if(instr.charAt(0) == 'F')
   {
-    motor->command("FORWARD "+DEFAULT_RPM+String(instr_len));
+    motor->moveForward(DEFAULT_RPM, instr_len);
   }
   else if(instr.charAt(0) == 'B')
   {
-    motor->command("BACKWARD "+DEFAULT_RPM+String(instr_len));
+    motor->moveBackward(DEFAULT_RPM, instr_len);
   }
   else if(instr == "L")
   {
-    motor->command("ROTATE_LEFT "+DEFAULT_RPM+"90");
+    motor->rotateLeft(DEFAULT_RPM, 90);
     calibration->informTurn(false);
   }
   else if(instr == "R")
   {
-    motor->command("ROTATE_RIGHT "+DEFAULT_RPM+"90");
+    motor->rotateLeft(DEFAULT_RPM, 90);
     calibration->informTurn(true);
   }
   else if(instr == "ES")

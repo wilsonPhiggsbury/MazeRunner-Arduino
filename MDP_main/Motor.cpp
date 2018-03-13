@@ -22,86 +22,79 @@ Motor::Motor(int E1A, int E1B, int E2A, int E2B)
     this->last_error_e2 = 0;
     this->last_last_error_e1 = 0;
     this->last_last_error_e2 = 0;
-    this->motor_status = "FORWARD";
-    this->commandPeriod = 0;
+    this->motor_status = COMM_FORWARD;
     tick = 0;
 }
 
-void Motor::command(String fullCommand)
+void Motor::moveForward(float input_rpm, float cell_num)
 {
-    String command = this->getSubString(fullCommand, ' ', 0);
-    this->commandPeriod = getPeriod(fullCommand);
-	  this->motor_status = command;
-    if(command == "FORWARD")
-    {
-        float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
-        this->moveForward(rpm);
-        if(this->commandPeriod != 0) {
-          while(tick < this->commandPeriod) {
-            this->adjustSpeed(true);
-          }
-          md.setBrakes(400,400);
-          this->resetError();
-        }
-    }
-    else if(command == "BACKWARD")
-    {
-        float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
-        this->moveBackward(rpm);
-        if(this->commandPeriod != 0) {
-          while(tick < this->commandPeriod) {
-            this->adjustSpeed(false);
-          }
-          md.setBrakes(400,400);
-          this->resetError();
-        }
-    }
-    else if(command == "ROTATE_RIGHT")
-    {
-        float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
-        md.setSpeeds(rpmToSpeed(rpm, false), -1*rpmToSpeed(rpm, true));
-        if(this->commandPeriod != 0) {
-          while(tick < this->commandPeriod) {
-            Serial.print("");
-          }
-          md.setBrakes(400,400);
-        }
-    }
-    else if(command == "ROTATE_LEFT")
-    {
-        float rpm =  getSubString(fullCommand, ' ', 1).toFloat();
-        md.setSpeeds(-1*rpmToSpeed(rpm, false), rpmToSpeed(rpm, true));
-        if(this->commandPeriod != 0) {
-          while(tick < this->commandPeriod) {
-            Serial.print("");
-          }
-          md.setBrakes(400,400);  
-        }
-    }
-    else if(command == "STOP")
-    {
-      md.setBrakes(400,400);
-      this->resetError();
-    }
-    tick = 0;
-} 
-
-void Motor::moveForward(float input_rpm)
-{
-  this->motor_status = "FORWARD";
+  this->motor_status = COMM_FORWARD;
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
+  long tickPeriod = getMoveTime(input_rpm, cell_num);
   md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
+  if(tickPeriod != 0) {
+    while(tick < tickPeriod) {
+      this->adjustSpeed(true);
+    }
+    md.setBrakes(400,400);
+    this->resetError();
+    tick = 0;
+  } 
 }
 
-void Motor::moveBackward(float input_rpm)
+void Motor::moveBackward(float input_rpm, float cell_num)
 {
-  this->motor_status = "BACKWARD";
+  this->motor_status = COMM_BACKWARD;
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
+  long tickPeriod = getMoveTime(input_rpm, cell_num);
   md.setSpeeds(-1*rpmToSpeed(this->input_rpm_e2, false), -1*rpmToSpeed(this->input_rpm_e1, true));
+  if(tickPeriod != 0) {
+    while(tick < tickPeriod) {
+      this->adjustSpeed(false);
+    }
+    md.setBrakes(400,400);
+    this->resetError();
+    tick = 0;
+  } 
+}
+
+void Motor::rotateRight(float input_rpm, float degree)
+{
+  this->motor_status = COMM_ROTATE_R;
+  long tickPeriod = getRotateTime(input_rpm, degree, true);
+  md.setSpeeds(rpmToSpeed(input_rpm, false), -1*rpmToSpeed(input_rpm, true));
+  if(tickPeriod != 0) {
+    while(tick < tickPeriod) {
+      Serial.print("");
+    }
+    md.setBrakes(400,400);
+    tick = 0;
+  }
+}
+
+void Motor::rotateLeft(float input_rpm, float degree)
+{
+  this->motor_status = COMM_ROTATE_L;
+  long tickPeriod = getRotateTime(input_rpm, degree, false);
+  md.setSpeeds(-1*rpmToSpeed(input_rpm, false), rpmToSpeed(input_rpm, true));
+  if(tickPeriod != 0) {
+    while(tick < tickPeriod) {
+      Serial.print("");
+    }
+    md.setBrakes(400,400);
+    tick = 0;
+  }
+}
+
+void Motor::stopBot()
+{
+  md.setBrakes(400,400);
+  this->resetError();
+  tick = 0;
 }
 
 int Motor::rpmToSpeed(float rpm, boolean isE1)
@@ -118,7 +111,7 @@ int Motor::rpmToSpeed(float rpm, boolean isE1)
 
 void Motor::adjustSpeed(bool isForward)
 {
-    if(this->motor_status == "FORWARD")
+    if(this->motor_status == COMM_FORWARD)
     {
         // get reading
         for (int i=0; i<NUM_SAMPLES; i++) {
@@ -135,7 +128,7 @@ void Motor::adjustSpeed(bool isForward)
         float e1_reading = ((e1a_reading + e1b_reading) / 2.0) + e1_offset;
         float e2_reading = ((e2a_reading + e2b_reading) / 2.0) + e2_offset;
 
-//        Serial.println(String(e1_reading) + "    " + String(e2_reading));
+        Serial.println(String(e1_reading) + "    " + String(e2_reading));
         
         this->last_last_error_e1 = this->last_error_e1;
         this->last_last_error_e2 = this->last_error_e2;
@@ -188,21 +181,6 @@ float Motor::getRpm(unsigned int readings[]) {
   return RPM_CONVERSION/takeMedian(readings);
 }
 
-String Motor::getSubString(String data, char separator, int index) {
-  int found = 0;
-  int strIndex[] = { 0, -1 };
-  int maxIndex = data.length() - 1;
-
-  for (int i = 0; i <= maxIndex && found <= index; i++) {
-      if (data.charAt(i) == separator || i == maxIndex) {
-          found++;
-          strIndex[0] = strIndex[1] + 1;
-          strIndex[1] = (i == maxIndex) ? i+1 : i;
-      }
-  }
-  return found > index ? data.substring(strIndex[0], strIndex[1]) : "0";
-}
-
 long Motor::getMoveTime(float rpm, float num_cell) {
   //long offset = dis_time_m * num_cell + dis_time_c;
   if(num_cell == 0){
@@ -228,30 +206,6 @@ long Motor::getRotateTime(float rpm, float degree, bool isRight) {
     offset = 5;
   }
   return degree*CPD + offset;
-}
-
-long Motor::getPeriod(String full_command) {
-  String command = getSubString(full_command, ' ', 0);
-  float rpm =  getSubString(full_command, ' ', 1).toFloat();
-  if(command == "FORWARD" || command == "BACKWARD")
-  {
-    float num_cell =  getSubString(full_command, ' ', 2).toFloat();
-    return getMoveTime(rpm, num_cell);
-  }
-  else if(command == "ROTATE_RIGHT")
-  {
-    float degree =  getSubString(full_command, ' ', 2).toFloat();
-    return getRotateTime(rpm, degree, true);
-  }
-  else if(command == "ROTATE_LEFT")
-  {
-    float degree =  getSubString(full_command, ' ', 2).toFloat();
-    return getRotateTime(rpm, degree, false);
-  }
-  else
-  {
-    return getSubString(full_command, ' ', 1).toInt();
-  }
 }
 
 void Motor::resetError()
