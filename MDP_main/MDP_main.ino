@@ -21,7 +21,7 @@ const int E1A = 3; //right
 const int E1B = 5;
 const int E2A = 11; //left
 const int E2B = 13;
-bool DEBUGMODE = true;
+bool DEBUGMODE = false;
 
 IR *IR_sensors[6];
 Motor *motor;
@@ -124,7 +124,7 @@ void loop() {
   }
   sendToAlgo += "\n";
   Serial.println(sendToAlgo);
-  if(DEBUGMODE)Serial.print("EOL");
+//  if(DEBUGMODE)Serial.print("EOL");
   // calibrate
   //calibration->calibrateRotation(true);
   // read command, parse and execute
@@ -167,7 +167,7 @@ bool executeInstruction(String instr, int instr_len)
   }
   else if(instr == "R")
   {
-    motor->rotateLeft(DEFAULT_RPM, 90);
+    motor->rotateRight(DEFAULT_RPM, 90);
     calibration->informTurn(true);
   }
   else if(instr == "ES")

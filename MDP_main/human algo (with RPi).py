@@ -54,6 +54,8 @@ else:
 b=''
 while True:
     a = str(input())
+    if a=='':
+        a = 'a'
     if a=='D':
         debug = not debug
         if debug:

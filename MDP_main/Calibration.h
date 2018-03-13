@@ -13,7 +13,7 @@ class Calibration
     // subroutines & utilities
     void fixDisplacement(bool useTolerance);
     bool calibrateRotation_subroutine(int guardbound_l, int guardbound_h, int scalebound_l, int scalebound_h, int sensor1, int sensor2, int sensorwidth, int dist);
-    void updateReadings();
+    void updateReadings(bool wait);
     bool DEBUG;
 
 	public:

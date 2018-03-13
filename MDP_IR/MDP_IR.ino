@@ -2,7 +2,7 @@
 
 IR *IR_sensors[6];
 int i;
-bool raw = false;
+bool raw = true;
 void setup() {
   Serial.begin(9600);
   for(int i=0; i<6; i++)

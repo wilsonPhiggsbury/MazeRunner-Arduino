@@ -9,10 +9,10 @@
 
 #define START -50
 #define INTERVAL 50
-#define FL_LIMIT 300
-#define FM_LIMIT 350
+#define FL_LIMIT 350
+#define FM_LIMIT 200
 #define FR_LIMIT 350
-#define S_FL_LIMIT 400
+#define S_FL_LIMIT 800
 #define S_FR_LIMIT 300
 #define S_BR_LIMIT 300
 
@@ -21,12 +21,18 @@ class IR
     private:
         int id;
         // Observation-based values
-         const int FL_offsets[8] = {-50,4,84,147,200,229,242,249}; // 8
-         const int FM_offsets[9] = {-50,3,57,107,158,213,267,300,350}; // 8
-         const int FR_offsets[9] = {-50,3,52,105,159,209,265,300,350}; // 8
-         const int S_FL_offsets[10] = {-50,0,50,100,150,200,250,300,350,400}; // 10
-         const int S_FR_offsets[8] = {-50,0,50,100,150,200,250,300}; // 8
-         const int S_BR_offsets[8] = {-50,0,50,100,150,200,250,300}; // 8
+        //{-50,0,50,100,150,200,250,300,350,400}
+         const int FL_offsets[8] = {-45,0,84,147,200,229,242,249}; // 8
+         const int FM_offsets[9] = {-45,10,57,107,158,213,267,300,350}; // 8
+         const int FR_offsets[9] = {-45,15,52,105,159,209,265,300,350}; // 8
+         const int S_FL_offsets[18] = {-50,12,71,124,169,207,255,309,367,438,475,540,582,637,666,727,765,830}; // 10
+         const int S_FR_offsets[8] = {-49,8,56,99,141,193,248,283}; // 8
+         const int S_BR_offsets[8] = {-32,9,59,103,151,199,243,284}; // 8
+         const int F_shortrangeOffsets[3][6] = { // until -25 only
+           {4,-1,-5,-10,-15,-18},
+           {-2,-6,-3,-8,-12,-13},
+           {6,1,-3,-6,-9,-10}
+         };
 //         int readingConsts_fine[6][26] = {
 //            {652, 632, 609, 571, 544, 522, 505, 490, 474, 463, 449, 436, 426, 417, 407, 397, 390, 384, 374, 367, 360, 356, 350, 343,0,0},
 //            {597, 569, 544, 521, 498, 471, 454, 436, 421, 409, 393, 381, 373, 358, 348, 337, 325, 317, 310, 301, 293, 288, 283, 275,0,0},

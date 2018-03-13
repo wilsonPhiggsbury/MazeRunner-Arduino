@@ -69,7 +69,7 @@ void Motor::rotateRight(float input_rpm, float degree)
   md.setSpeeds(rpmToSpeed(input_rpm, false), -1*rpmToSpeed(input_rpm, true));
   if(tickPeriod != 0) {
     while(tick < tickPeriod) {
-      Serial.print("");
+      input_rpm = millis();
     }
     md.setBrakes(400,400);
     tick = 0;
@@ -83,7 +83,7 @@ void Motor::rotateLeft(float input_rpm, float degree)
   md.setSpeeds(-1*rpmToSpeed(input_rpm, false), rpmToSpeed(input_rpm, true));
   if(tickPeriod != 0) {
     while(tick < tickPeriod) {
-      Serial.print("");
+      input_rpm = millis();
     }
     md.setBrakes(400,400);
     tick = 0;
@@ -128,7 +128,7 @@ void Motor::adjustSpeed(bool isForward)
         float e1_reading = ((e1a_reading + e1b_reading) / 2.0) + e1_offset;
         float e2_reading = ((e2a_reading + e2b_reading) / 2.0) + e2_offset;
 
-        Serial.println(String(e1_reading) + "    " + String(e2_reading));
+        //Serial.println(String(e1_reading) + "    " + String(e2_reading));
         
         this->last_last_error_e1 = this->last_error_e1;
         this->last_last_error_e2 = this->last_error_e2;

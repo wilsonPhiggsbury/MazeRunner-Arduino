@@ -16,13 +16,14 @@
 #define S_BR 5// right back (side)
 
 // IR sensor calibrate ROTATION trusted range, in mm
-#define ROTATION_RANGE_FLO -15
+#define ROTATION_RANGE_FLO -10
 #define ROTATION_RANGE_FHI 120
-#define ROTATION_RANGE_SLO -25
+#define ROTATION_RANGE_SLO -30 // even -40
 #define ROTATION_RANGE_SHI 150
 // tolerance in mm
 #define ROTATION_ROUGH_TOLERANCE 25//(5~10)
-#define ROTATION_FINE_TOLERANCE 10
+#define ROTATION_FINE_TOLERANCE_SIDE 10//(5~10)
+#define ROTATION_FINE_TOLERANCE_FRONT 7
 //______________________________________________________
 // IR sensor calibrate DISPLACEMENT trusted range, in mm
 #define DISPLACEMENT_RANGE_FRONT 210 // SUBJ TO CHANGE (<)
@@ -60,7 +61,7 @@ Calibration::Calibration(IR *IR_sensors[6], Motor *motor, bool debug)
 }
 int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
 {
-	updateReadings();
+	updateReadings(true);
 	// check whether in rotate range
 	/* condition to fufil before updating front displacement  (displacement_fixNow):
 	*   front middle sensor indicates distance is between 0 and 1
@@ -73,83 +74,34 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
 
 	// check rotation, fine or coarse subroutine?
 	//if(DEBUG)Serial.println("Calibrating Rot");
-	String fb_command;
-	bool sideUseFrontCalibration = false;
-	if(front_or_side == 'S')
-	{
-		// if only one eye visible, come back!! this may fix it (or may not)
-		if(IR_sensors[S_FR]->reading == 900 && IR_sensors[S_BR]->reading != 900)
-		{
-			fb_command = "BACKWARD ";
-      motor->moveBackward(DEFAULT_RPM, 1);
-		}
-		else if(IR_sensors[S_FR]->reading != 900 && IR_sensors[S_BR]->reading == 900)
-		{
-			fb_command = "FORWARD ";
-			motor->moveForward(DEFAULT_RPM, 1);
-		}
-		else if(IR_sensors[S_FR]->reading == 900 && IR_sensors[S_BR]->reading == 900)
-		{
-			return 0;
-		}
-		delay(250);
-		// once fixed both eyes visibility (or may not), check if in range.
-		int avgSideReading = (IR_sensors[S_FR]->reading + IR_sensors[S_BR]->reading)/2;
-		if(avgSideReading < ROTATION_RANGE_SLO || avgSideReading > ROTATION_RANGE_SHI)
-		{
-			fb_command = "ROTATE_RIGHT ";
-			motor->rotateRight(DEFAULT_RPM, 90);
-			sideUseFrontCalibration = true;
-//      if(DEBUG)Serial.println("Switching to front calibration.");
-      delay(300);
-			updateReadings();
-			// go down and use front calibration
-		}
-		else
-		{
-			calibrateRotation('S');
-		}
-	}
-	if(front_or_side == 'F' || sideUseFrontCalibration)
-	{
-		if(IR_sensors[FM]->reading < ROTATION_RANGE_FLO)
-		{
-			fb_command = "BACKWARD ";
-      //if(DEBUG)Serial.println("Backing into range, cells: "+String(float(ROTATION_RANGE_FLO-IR_sensors[FM]->reading)/100,2));
-			motor->moveBackward(DEFAULT_RPM, float(ROTATION_RANGE_FLO-IR_sensors[FM]->reading/100,2));
-		}
-		else if(IR_sensors[FM]->reading > ROTATION_RANGE_FHI)
-		{
-			fb_command = "FORWARD ";
-      //if(DEBUG)Serial.println("Forward into range, cells: "+String(float(ROTATION_RANGE_FLO-IR_sensors[FM]->reading)/100,2));
-			motor->moveForward(DEFAULT_RPM, float(IR_sensors[FM]->reading-ROTATION_RANGE_FHI/100,2));
-		}
-		calibrateRotation('F');
-	}
+	calibrateRotation(front_or_side);
 	
 	// check displacement, fine or corase subroutine?
 	//if(DEBUG)Serial.println("Calibrating Displ");
-	calibrateDisplacement(distInTheory*100, sideUseFrontCalibration? 'F':front_or_side);
-
-	delay(250);
-	if(sideUseFrontCalibration)
-    motor->rotateLeft(DEFAULT_RPM, 90);
+  delay(200);
+	calibrateDisplacement(distInTheory*100, front_or_side);
+  delay(200);
+  	calibrateRotation(front_or_side);
+	delay(200);
+ calibrateDisplacement(distInTheory*100,front_or_side);
+ delay(200);
+	// if(sideUseFrontCalibration)
+ //    motor->rotateLeft(DEFAULT_RPM, 90);
 	return 1;
 }
 void Calibration::informTurn(bool right)
 {
 	delay(250);
-	String fb_command = right? "BACKWARD ":"FORWARD ";
-	if(displacement_fixLater != 0)
-	{
-    if(right){
-      motor->moveBackward(DEFAULT_RPM, float(displacement_fixLater/100.0,2));
-    }
-    else {
-      motor->moveForward(DEFAULT_RPM, float(displacement_fixLater/100.0,2));
-    }
-    displacement_fixLater = 0;
-	}
+//	if(displacement_fixLater != 0)
+//	{
+//		if(right){
+//		  motor->moveBackward(DEFAULT_RPM, float(displacement_fixLater/100.0,2));
+//		}
+//		else {
+//		  motor->moveForward(DEFAULT_RPM, float(displacement_fixLater/100.0,2));
+//		}
+//		displacement_fixLater = 0;
+//	}
 }
 void Calibration::toggleDebug()
 {
@@ -158,14 +110,13 @@ void Calibration::toggleDebug()
 // private ---------------------------------------------------------------
 void Calibration::calibrateRotation(char front_or_side)
 {
-	// update readings, because it may be executed after slight adjustment (to get in range)
-	updateReadings();
-	int sensorwidth,diff,sensor1,sensor2;
+	int sensorwidth,diff,tolerance,sensor1,sensor2;
 	float turnDegree, toleranceScale;
 	String lr_command;
 	if(front_or_side == 'F')
 	{
   //if(DEBUG)Serial.println("ROT Front");
+    tolerance = ROTATION_FINE_TOLERANCE_FRONT;
 		// smart choice of sensors: if blind, use the other two!
 		if(IR_sensors[FL]->reading != 900 && IR_sensors[FR]->reading != 900)
 		{
@@ -174,76 +125,75 @@ void Calibration::calibrateRotation(char front_or_side)
 			sensorwidth = FRONT_SENSOR_WIDTH;
       //if(DEBUG)Serial.println("L & R");
 		}
-		else if(IR_sensors[FL]->reading != 900 && IR_sensors[FR]->reading == 900)
+		else if(IR_sensors[FL]->reading != 900 && IR_sensors[FR]->reading == 900 && IR_sensors[FM]->reading != 900)
 		{
+			// Only right sensor blind
 			sensor1 = FL;
 			sensor2 = FM;
 			sensorwidth = 9;
       //if(DEBUG)Serial.println("L & M");
 		}
-		else if(IR_sensors[FL]->reading == 900 && IR_sensors[FR]->reading != 900)
+		else if(IR_sensors[FL]->reading == 900 && IR_sensors[FR]->reading != 900 && IR_sensors[FM]->reading != 900)
 		{
+			// Only left sensor blind
 			sensor1 = FM;
 			sensor2 = FR;
 			sensorwidth = 8;
       //if(DEBUG)Serial.println("M & R");
 		}
 		else
+		{
+			//if(DEBUG)Serial.println("Sensors blind, abort FRONT");
 			return;
+		}
 		toleranceScale = 1;
 	}
 	else if(front_or_side == 'S')
 	{
   //if(DEBUG)Serial.println("Rot Side");
+    tolerance = ROTATION_FINE_TOLERANCE_SIDE;
 		sensor1 = S_FR;
 		sensor2 = S_BR;
 		sensorwidth = SIDE_SENSOR_WIDTH;
 		toleranceScale = 1;
 	}
 	diff = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
-	if(diff > 0)// FL/S_FR longer
-		lr_command = "ROTATE_RIGHT ";
-	else		// FR/S_BR longer
-		lr_command = "ROTATE_LEFT ";
 	// _________________________________________ do rough calibration
-	if(abs(diff) > ROTATION_ROUGH_TOLERANCE*toleranceScale)
-	{
-		turnDegree = atan2(abs(diff),sensorwidth) / PI * 180 * TURNDEG_SCALEDOWN;
-		//if(DEBUG)Serial.println(String(turnDegree)+lr_command + DEFAULT_RPM + String(turnDegree,0));
-    if(diff > 0){
-      motor->rotateRight(DEFAULT_RPM, turnDegree);
-    }
-    else {
-      motor->rotateLeft(DEFAULT_RPM, turnDegree);
-    }
-	}
-	delay(200);
+	// if(abs(diff) > ROTATION_ROUGH_TOLERANCE*toleranceScale)
+	// {
+	// 	turnDegree = atan2(abs(diff),sensorwidth) / PI * 180 * TURNDEG_SCALEDOWN;
+	// 	//if(DEBUG)Serial.println(String(turnDegree)+lr_command + DEFAULT_RPM + String(turnDegree,0));
+	// 	if(diff > 0){
+	// 		motor->rotateRight(DEFAULT_RPM, turnDegree);
+	// 	}
+	// 	else {
+	// 		motor->rotateLeft(DEFAULT_RPM, turnDegree);
+	// 	}
+	// }
+	// delay(200);
 	// _________________________________________ do fine calibration
 	// Potentially can switch over to FR and FL again for case 'F'
-	updateReadings();
+	updateReadings(true);
 	diff = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
-	if(diff > 0)// FL/S_FR longer
-		lr_command = "ROTATE_RIGHT ";
-	else    // FR/S_BR longer
-		lr_command = "ROTATE_LEFT ";
-	if(abs(diff) > ROTATION_FINE_TOLERANCE*toleranceScale)
+	bool isRight = diff > 0;
+	if(abs(diff) > tolerance*toleranceScale)
 	{
 		//if(DEBUG)Serial.println(lr_command + SLOW_RPM);
-   if(diff > 0) {
-     motor->rotateRight(SLOW_RPM, 0);
-   }
-   else {
-     motor->rotateLeft(SLOW_RPM, 0);
-   }
+		if(diff > 0) {
+			motor->rotateRight(SLOW_RPM, 0);
+		}
+		else {
+			motor->rotateLeft(SLOW_RPM, 0);
+		}
 	}
 	else
 		return;
 	do
 	{
-		updateReadings();
+		updateReadings(false);
 		diff = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
 		//if(DEBUG)Serial.println(diff);
-	}while(abs(diff) > ROTATION_FINE_TOLERANCE);
+	}while(abs(diff) > tolerance && (isRight == (diff>0)));
 	//if(DEBUG)Serial.println("STOP");
 	motor->stopBot();
 }
@@ -252,57 +202,39 @@ void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
 {
 	
 	// update readings, usually executed after rotated back to spot
-	updateReadings();
+	updateReadings(true);
 	int diff;
 	float toleranceScale;
-	String lr_command;
 	if(front_or_side == 'F')
 	{//if(DEBUG)Serial.println("DISPL Front");
 		diff = distToObstacle - IR_sensors[FM]->reading;
 		toleranceScale = 1;
-		if(diff < 0) // too back
-			lr_command = "FORWARD ";
-		else		// too front
-			lr_command = "BACKWARD ";
-		// _________________________________________ do rough calibration
-		if(abs(diff) > DISPLACEMENT_ROUGH_TOLERANCE)
-		{
-			//if(DEBUG)Serial.println(lr_command + DEFAULT_RPM + String(float(diff*TURNDISPL_SCALEDOWN)/100.0,2));
-      if(diff<0){
-        motor->moveForward(DEFAULT_RPM, float(diff*TURNDISPL_SCALEDOWN/100.0,2));
-      }
-      else {
-        motor->moveBackward(DEFAULT_RPM, float(diff*TURNDISPL_SCALEDOWN/100.0,2));
-      }
-			
-		}
-    	delay(250);
+		
 		// _________________________________________ do fine calibration
-		updateReadings();
+		updateReadings(true);
 		diff = distToObstacle - IR_sensors[FM]->reading;
-		if(diff < 0) // too back
-			lr_command = "FORWARD ";
-		else    // too front
-			lr_command = "BACKWARD ";
+    	bool isFront = diff<0;
+//    	if(DEBUG)Serial.println("Dist:"+String(distToObstacle)+" Reading:"+String(IR_sensors[FM]->reading)+" diff: "+String(diff));
 		if(abs(diff) > DISPLACEMENT_FINE_TOLERANCE)
 		{
-			//if(DEBUG)Serial.println(lr_command + SLOW_RPM);
-      if(diff < 0) {
-        motor->moveForward(SLOW_RPM, 0);
-      }
-      else {
-        motor->moveBackward(SLOW_RPM, 0);
-      }
+//			if(DEBUG)Serial.println("CAL Front slowly");
+			if(diff < 0) {
+				motor->moveForward(SLOW_RPM, 0);
+			}
+			else {
+				motor->moveBackward(SLOW_RPM, 0);
+			}
 			
 		}
 		else
 			return;
 		do
 		{
-			updateReadings();
+			updateReadings(false);
 			diff = distToObstacle - IR_sensors[FM]->reading;
-			
-		}while(abs(diff) < DISPLACEMENT_FINE_TOLERANCE);
+			motor->adjustSpeed(diff<0);
+		}while(abs(diff) > DISPLACEMENT_FINE_TOLERANCE && (isFront == (diff<0)));
+//   if(DEBUG)Serial.println("Diff:"+String(diff)+" Front? "+String(isFront));
 		//if(DEBUG)Serial.println("STOP");
 		motor->stopBot();
 	}
@@ -311,12 +243,20 @@ void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
 		toleranceScale = 1;
 		
 		displacement_fixLater = distToObstacle - (IR_sensors[S_FR]->reading + IR_sensors[S_BR]->reading)/2;
-		if(abs(displacement_fixLater) > 40)
+		// if(abs(displacement_fixLater) > 40)
+		// {
+		// 	motor->rotateLeft(105, 90);
+		// 	informTurn(false);
+		// 	delay(250);
+		// 	motor->rotateRight(105, 90);
+		// }
+		if(abs(displacement_fixLater) > DISPLACEMENT_FINE_TOLERANCE)
 		{
+			motor->rotateRight(105, 90);
+      delay(200);
+			calibrateDisplacement(distToObstacle, 'F');
+      delay(200);
 			motor->rotateLeft(105, 90);
-			informTurn(false);
-			delay(250);
-      motor->rotateRight(105, 90);
 		}
 	}
 }
@@ -371,13 +311,12 @@ void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
 //
 //	}
 //}
-void Calibration::updateReadings()
+void Calibration::updateReadings(bool wait)
 {
-	delay(200);
+	if(wait)delay(200);
 	for(int i=0; i<6; i++)
 	{
 	IR_sensors[i]->takeReading(true);
-	//Serial.print(String(IR_sensors[i]->reading)+"\t");
 	}
 	////if(DEBUG)Serial.println();
 }

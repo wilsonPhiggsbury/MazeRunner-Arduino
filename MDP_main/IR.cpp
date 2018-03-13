@@ -59,19 +59,27 @@ int IR::fitCurve()
 	switch(this->id)
 	{
 	case FL:
-   bound = FL_LIMIT;
-	 dist = logisticFit(x, 262.81293, -35.58077, 322.95448, 3.54856);
+ 	bound = FL_LIMIT;
+	dist = logisticFit(x, 262.81293, -35.58077, 322.95448, 3.54856);
+//	if(dist<0)
+//		dist = cubicFit(x, 2016.17638, -10.27134, 0.0175, -1.0087e-5);
 	break;
 	case FM:
-   bound = FM_LIMIT;
-	 dist = logisticFit(x, 2072.83017, -93.91462, 41.48998, 1.22671);
+	bound = FM_LIMIT;
+	dist = logisticFit(x, 2072.83017, -93.91462, 41.48998, 1.22671);
+//	if(dist<0)
+//		dist = cubicFit(x, 3939.21375, -19.38187, 0.03189, -1.76112e-5);
 	break;
 	case FR:
-   bound = FR_LIMIT;
-	 dist = logisticFit(x, 4508.49721, -90.55705, 34.42585, 1.35516);
+ 	bound = FR_LIMIT;
+	dist = logisticFit(x, 4508.49721, -90.55705, 34.42585, 1.35516);
+//	if(dist<0)
+//		dist = cubicFit(x,4309.69231, -20.23017, 0.0319, -1.69584e-5);
 	break;
 	case S_FL:
 	dist = cubicFit(x, 1799.43651, -9.76627, 0.02037, -1.51172e-5);
+	if(dist>S_FL_LIMIT)return 900;
+	else return dist;
 	break;
 	case S_FR:
    bound = S_FR_LIMIT;
@@ -84,12 +92,11 @@ int IR::fitCurve()
 	 //dist = cubicFit(x, 985.90138, -6.45298, 0.01508, -1.23553e-5);
 	break;
 	}
- return dist;
 //   bound += 50;
 //	 if(dist>=bound)
 //	 	return 900;
 //	 else
-	 	
+	 	return dist;
 //	int n;Serial.println("HERE");
 //	if(this->reading >= readingConsts_fine[this->id][0])
 //		return 900;//too near
@@ -116,7 +123,10 @@ int IR::correction()
 	switch(this->id)
 	{
     case FL:
-    correctedVal = scaleByInterval(correctedVal,FL_offsets,START,FL_LIMIT,INTERVAL);
+    if(correctedVal >= 0)
+      correctedVal = scaleByInterval(correctedVal,FL_offsets,START,FL_LIMIT,INTERVAL);
+    else
+      
     break;
     case FM:
     correctedVal = scaleByInterval(correctedVal,FM_offsets,START,FM_LIMIT,INTERVAL);
@@ -161,7 +171,7 @@ static int IR::logisticFit(int x, float A1, float A2, float x0, float p)
 }
 static int IR::cubicFit(int x, float A, float B, float C, float D)
 {
-	return int(A + B*x + C*pow(x,2) + D*pow(x,3));
+	return int(A + B*float(x) + C*pow(float(x),2) + D*pow(float(x),3));
 }
 // static float IR::power2Fit(float x, float xc, float A, float pl)
 // {

@@ -28,7 +28,7 @@ const float E2C = -16.30316431466205;
 
 //Encoder offsets
 const float e1_offset = 0;
-const float e2_offset = 10;
+const float e2_offset = 30;
 
 //rotation time offset
 const float rotate_r_m = 0.44444444444;
@@ -71,7 +71,7 @@ class Motor
         
     public:
         bool isRunning;
-        String motor_status;
+        char motor_status;
         Motor(int E1A, int E1B, int E2A, int E2B);
         int rpmToSpeed(float rpm, boolean isRight);
         void adjustSpeed(bool isForward);
