@@ -13,15 +13,6 @@ String inputBuffer = "";
 long startTime = 0;
 long commandPeriod = 0;
 
-const char* commands[] = {
-  "ROTATE_RIGHT 105 90",
-  "ROTATE_RIGHT 105 90",
-  "ROTATE_LEFT 105 90",
-  "ROTATE_LEFT 105 90"
-  };
-
-unsigned int command_index = 0;
-
 void setup() {
   // put your setup code here, to run once:
   motor = new Motor(E1A, E1B, E2A, E2B);
@@ -34,7 +25,13 @@ void setup() {
 
 void loop() {
   delay(1000);
-  motor->command(commands[command_index]);
-  command_index++;
-  command_index %= 4;
+  motor->moveForward(105, 2);
+  delay(1000);
+  motor->moveBackward(105, 1);
+  delay(1000);
+  motor->rotateRight(105, 90);
+  delay(1000);
+  motor->rotateLeft(105, 90);
+  delay(1000);
+  motor->stopBot();
 }

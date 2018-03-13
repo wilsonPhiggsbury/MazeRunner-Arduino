@@ -40,6 +40,12 @@ const float rotate_l_c = -20;
 const float dis_time_m = 56.25;
 const float dis_time_c = -56.25;
 
+//command
+const char COMM_FORWARD = 'F';
+const char COMM_BACKWARD = 'B';
+const char COMM_ROTATE_R = 'R';
+const char COMM_ROTATE_L = 'L';
+
 class Motor
 {
     private:
@@ -67,17 +73,17 @@ class Motor
         bool isRunning;
         String motor_status;
         Motor(int E1A, int E1B, int E2A, int E2B);
-        void command(String command);
         int rpmToSpeed(float rpm, boolean isRight);
         void adjustSpeed(bool isForward);
         unsigned int takeMedian(unsigned int nums[]);
-        void moveForward(float input_rpm);
-        void moveBackward(float input_rpm);
+        void moveForward(float input_rpm, float cell_num);
+        void moveBackward(float input_rpm, float cell_num);
+        void rotateRight(float input_rpm, float degree);
+        void rotateLeft(float input_rpm, float degree);
+        void stopBot();
         float getRpm(unsigned int readings[]);
-        String getSubString(String data, char separator, int index);
         long getMoveTime(float rpm, float num_cell);
         long getRotateTime(float rpm, float degree, bool isRight);
-        long getPeriod(String full_command);
         void resetError();
 };
 
