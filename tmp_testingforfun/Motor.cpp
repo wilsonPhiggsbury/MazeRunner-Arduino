@@ -55,6 +55,7 @@ void Motor::command(String fullCommand)
           md.setBrakes(400,400);
           this->resetError();
         }
+        
     }
     else if(command == "ROTATE_RIGHT")
     {

@@ -42,7 +42,10 @@ client = TcpClient("192.168.7.1", 77)
 client.connect()
 myfile = open('readvalues_frontsensors.txt','w')
 myfile2 = open('readvalues_sidesensors.txt','w')
-dist = 0
+print("Start Dist:",end='')
+dist = int(input())
+print("Interval:",end='')
+interval = int(input())
 
 accumulate = [[],[],[],[],[],[]]
 for i in range(6):
@@ -73,7 +76,7 @@ while True:
             continue
         myfile.write('{:04.2f}'.format(float(dist))+'\t')
         myfile2.write('{:04.2f}'.format(float(dist))+'\t')
-        dist += 0.25
+        dist += interval
         print('Values written:')
         for i in range(6):
             writtenData = '{:04.2f}'.format(float(median(accumulate[i])))

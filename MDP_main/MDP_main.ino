@@ -99,22 +99,26 @@ void loop() {
 //  {
 //    IR_sensors[i]->takeReading(true);
 //  }
-  delay(100);
+  delay(200);
   // take real reading
   for(i=0; i<6; i++)
   {
-    IR_sensors[i]->takeReading(true);
+    int j;
+    if(i==1)j=0;
+    else if(i==0)j=1;
+    else j=i;
+    IR_sensors[j]->takeReading(true);
     int thisReading;
     if(!DEBUGMODE)
     {
-      thisReading = IR_sensors[i]->reading;
+      thisReading = IR_sensors[j]->reading;
       if(thisReading<0)
         thisReading = 0;
-      sendToAlgo += String(round(thisReading/100.0));
+      sendToAlgo += String(round(float(thisReading)/100.0));
     }
     else
     {
-      sendToAlgo += String(IR_sensors[i]->reading);
+      sendToAlgo += String(IR_sensors[j]->reading);
       sendToAlgo += " ";
     }
   }

@@ -40,7 +40,7 @@ client = TcpClient("192.168.7.1", 77)
 client.connect()
 
 ##print("Debug: ")
-b = 'y'
+b = 'n'
 if(b=='y'):
 
     debug = True

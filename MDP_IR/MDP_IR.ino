@@ -12,9 +12,8 @@ void setup() {
 }
 
 void loop() {
-  
   if(Serial.available()>1)
-  {
+  {//Serial.println("HERE");
     char readVal,readVal2;
     readVal = Serial.read();
     readVal2 = Serial.read();
@@ -28,6 +27,7 @@ void loop() {
       if(i==2 || i==5)Serial.print("\n");
       else Serial.print("\t");
     }
+    Serial.print("\nEOL");
   }
   
   delay(200); // slow down serial port
