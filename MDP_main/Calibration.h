@@ -8,8 +8,7 @@ class Calibration
 		Motor *motor;
     // main internal functions
     void calibrateRotation(char front_or_side);
-    void calibrateDisplacement(int distToObstacle, char front_or_side);
-    void calibrateDisplacement_forRotation();
+    void calibrateDisplacement(int distToObstacle, char front_or_side, int displaceOffset);
     // subroutines & utilities
     void fixDisplacement(bool useTolerance);
     bool calibrateRotation_subroutine(int guardbound_l, int guardbound_h, int scalebound_l, int scalebound_h, int sensor1, int sensor2, int sensorwidth, int dist);
