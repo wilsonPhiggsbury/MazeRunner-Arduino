@@ -2,8 +2,7 @@
 
 const int NUM_SAMPLES = 17;
 const int TPR = 2249; //Tick Per Rotation
-const int TPR_new = 520; //Tick Per Rotation
-const int CPC = 120; //298 //Count Per Cell
+const uint8_t CPC = 135; //298 //Count Per Cell
 const float CPD = 2.21255787037; //4.42511574074; //Count Per Degree
 const float RPM_CONVERSION = 120/(TPR*0.000001);
 const float CELL_SIZE = 10.0; //cm
