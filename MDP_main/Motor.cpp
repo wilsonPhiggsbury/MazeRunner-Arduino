@@ -43,6 +43,7 @@ void Motor::moveForward(float input_rpm, float cell_num)
       this->adjustSpeed(true);
     }
     md.setBrakes(400,400);
+    tick = 0;
     this->resetError();
   } 
 }
@@ -64,6 +65,7 @@ void Motor::moveBackward(float input_rpm, float cell_num)
       this->adjustSpeed(false);
     }
     md.setBrakes(400,400);
+    tick = 0;
     this->resetError();
   }
 }
@@ -73,6 +75,7 @@ void Motor::rotateRight(float input_rpm, float degree)
   this->motor_status = COMM_ROTATE_R;
   uint8_t tickPeriod = getRotateTime(input_rpm, degree, true);
   md.setSpeeds(rpmToSpeed(input_rpm, false), -1*rpmToSpeed(input_rpm, true));
+  tick = 0;
   if(tickPeriod != 0) {
     while(1) {
       if(tick>tickPeriod) {
@@ -89,6 +92,7 @@ void Motor::rotateLeft(float input_rpm, float degree)
   this->motor_status = COMM_ROTATE_L;
   uint8_t tickPeriod = getRotateTime(input_rpm, degree, false);
   md.setSpeeds(-1*rpmToSpeed(input_rpm, false), rpmToSpeed(input_rpm, true));
+  tick = 0;
   if(tickPeriod != 0) {
     while(1) {
       if(tick>tickPeriod) {
@@ -195,19 +199,19 @@ uint8_t Motor::getRotateTime(float rpm, float degree, bool isRight) {
   if(degree == 0){
     return 0;
   }
-  //long moveTime = (BASE_DIAMETER * degree * 1000) / (6*rpm*WHEEL_DIAMETER);
   int offset;
   if(isRight)
   {
-    offset = rotate_r_m*(degree) + rotate_r_c;
-    offset = 5;
+//    offset = rotate_r_m*(degree) + rotate_r_c;
+    offset = 4;
   }
   else
   {
-    offset = rotate_l_m*(degree) + rotate_l_c;
+//    offset = rotate_l_m*(degree) + rotate_l_c;
     offset = 0;
   }
-  return degree*CPD + offset;
+  int tickPeriod = (degree/90)*CPR + offset;
+  return tickPeriod;
 }
 
 void Motor::resetError()
