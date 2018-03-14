@@ -195,19 +195,19 @@ uint8_t Motor::getRotateTime(float rpm, float degree, bool isRight) {
   if(degree == 0){
     return 0;
   }
-//  //long moveTime = (BASE_DIAMETER * degree * 1000) / (6*rpm*WHEEL_DIAMETER);
-//  int offset;
-//  if(isRight)
-//  {
-//    offset = rotate_r_m*(degree) + rotate_r_c;
-//    offset = 0;
-//  }
-//  else
-//  {
-//    offset = rotate_l_m*(degree) + rotate_l_c;
-//    offset = 0;
-//  }
-  return degree*CPD;
+  //long moveTime = (BASE_DIAMETER * degree * 1000) / (6*rpm*WHEEL_DIAMETER);
+  int offset;
+  if(isRight)
+  {
+    offset = rotate_r_m*(degree) + rotate_r_c;
+    offset = 5;
+  }
+  else
+  {
+    offset = rotate_l_m*(degree) + rotate_l_c;
+    offset = 0;
+  }
+  return degree*CPD + offset;
 }
 
 void Motor::resetError()
