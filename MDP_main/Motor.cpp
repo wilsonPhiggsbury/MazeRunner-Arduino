@@ -32,18 +32,18 @@ void Motor::moveForward(float input_rpm, float cell_num)
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
-  volatile uint8_t cell_moved = 0;
+  uint8_t cell_moved = 0;
+  tick = 0;
   md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
   if(cell_num > 0) {
     while(cell_moved < cell_num) {
+      this->adjustSpeed(true);
       if(tick > CPC) {
         tick = 0;
         cell_moved++;
       }
-      this->adjustSpeed(true);
     }
     md.setBrakes(400,400);
-    tick = 0;
     this->resetError();
   } 
 }
@@ -54,18 +54,18 @@ void Motor::moveBackward(float input_rpm, float cell_num)
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
-  volatile uint8_t cell_moved = 0;
+  uint8_t cell_moved = 0;
+  tick = 0;
   md.setSpeeds(-1*rpmToSpeed(this->input_rpm_e2, false), -1*rpmToSpeed(this->input_rpm_e1, true));
   if(cell_num > 0) {
     while(cell_moved < cell_num) {
+      this->adjustSpeed(false);
       if(tick > CPC) {
         tick = 0;
         cell_moved++;
       }
-      this->adjustSpeed(false);
     }
     md.setBrakes(400,400);
-    tick = 0;
     this->resetError();
   }
 }
@@ -74,8 +74,8 @@ void Motor::rotateRight(float input_rpm, float degree)
 {
   this->motor_status = COMM_ROTATE_R;
   uint8_t tickPeriod = getRotateTime(input_rpm, degree, true);
-  md.setSpeeds(rpmToSpeed(input_rpm, false), -1*rpmToSpeed(input_rpm, true));
   tick = 0;
+  md.setSpeeds(rpmToSpeed(input_rpm, false), -1*rpmToSpeed(input_rpm, true));
   if(tickPeriod != 0) {
     while(1) {
       if(tick>tickPeriod) {
@@ -83,7 +83,6 @@ void Motor::rotateRight(float input_rpm, float degree)
       }
     }
     md.setBrakes(400,400);
-    tick = 0;
   }
 }
 
@@ -91,8 +90,8 @@ void Motor::rotateLeft(float input_rpm, float degree)
 {
   this->motor_status = COMM_ROTATE_L;
   uint8_t tickPeriod = getRotateTime(input_rpm, degree, false);
-  md.setSpeeds(-1*rpmToSpeed(input_rpm, false), rpmToSpeed(input_rpm, true));
   tick = 0;
+  md.setSpeeds(-1*rpmToSpeed(input_rpm, false), rpmToSpeed(input_rpm, true));
   if(tickPeriod != 0) {
     while(1) {
       if(tick>tickPeriod) {
@@ -100,7 +99,6 @@ void Motor::rotateLeft(float input_rpm, float degree)
       }
     }
     md.setBrakes(400,400);
-    tick = 0;
   }
 }
 
@@ -108,7 +106,6 @@ void Motor::stopBot()
 {
   md.setBrakes(400,400);
   this->resetError();
-  tick = 0;
 }
 
 int Motor::rpmToSpeed(float rpm, boolean isE1)

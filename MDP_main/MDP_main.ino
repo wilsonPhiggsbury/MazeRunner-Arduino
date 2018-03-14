@@ -1,3 +1,5 @@
+// Voltage: 6.3
+
 #include "IR.h"
 #include "Motor.h"
 #include "Calibration.h"
@@ -45,7 +47,7 @@ void setup(){
   pinMode(E1B, INPUT);
   pinMode(E2A, INPUT);
   pinMode(E2B, INPUT);
-  delay(1000);
+  delay(500);
 //  for(int a=0;a<20;a++)
 //  {String tmp = "";
 //  
@@ -99,7 +101,7 @@ void loop() {
 //  {
 //    IR_sensors[i]->takeReading(true);
 //  }
-  delay(200);
+  delay(150);
   // take real reading
   for(i=0; i<6; i++)
   {
@@ -144,14 +146,14 @@ void loop() {
     if(isHandled)
     {
       start = end;
-      delay(250);
+      delay(100);
     }
     end++;
   }
   in_command = "";
 }
 bool executeInstruction(String instr, int instr_len)
-{  
+{
   if(instr.charAt(0) == 'F')
   {
     motor->moveForward(DEFAULT_RPM, instr_len);

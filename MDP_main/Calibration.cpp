@@ -61,7 +61,9 @@ Calibration::Calibration(IR *IR_sensors[6], Motor *motor, bool debug)
 }
 int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
 {
-	
+	bool calibratedRotation = false;
+	bool calibratedDisplacement = false;
+  uint8_t limit = 0;
 	// check whether in rotate range
 	/* condition to fufil before updating front displacement  (displacement_fixNow):
 	*   front middle sensor indicates distance is between 0 and 1
@@ -71,16 +73,16 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
 	* For front sensors, trust sensor FM
 	* For side sensors, trust sensor S_BR
 	*/
-
-	// check rotation, fine or coarse subroutine?
-	//if(DEBUG)Serial.println("Calibrating Rot");
-	calibrateRotation(front_or_side);
+  do
+  {
+    // check rotation, fine or coarse subroutine?
+    calibratedRotation = calibrateRotation(front_or_side);
+    
+    // check displacement, fine or corase subroutine?
+    calibratedDisplacement = calibrateDisplacement(distInTheory*100, front_or_side, 0);//front_or_side=='S'?0:0);
+    limit++;
+  }while((calibratedRotation || calibratedDisplacement) && limit<2);
 	
-	// check displacement, fine or corase subroutine?
-	//if(DEBUG)Serial.println("Calibrating Displ");
-	calibrateDisplacement(distInTheory*100, front_or_side, front_or_side=='S'?7:0);
-//  calibrateRotation(front_or_side);
-//	calibrateDisplacement(distInTheory*100,front_or_side, front_or_side=='S'?7:0);
 	// if(sideUseFrontCalibration)
  //    motor->rotateLeft(DEFAULT_RPM, 90);
 	return 1;
@@ -104,7 +106,7 @@ void Calibration::toggleDebug()
 	this->DEBUG = !this->DEBUG;
 }
 // private ---------------------------------------------------------------
-void Calibration::calibrateRotation(char front_or_side)
+bool Calibration::calibrateRotation(char front_or_side)
 {
 	updateReadings(true);
 	int sensorwidth,diff,tolerance,sensor1,sensor2;
@@ -181,20 +183,22 @@ void Calibration::calibrateRotation(char front_or_side)
 		else {
 			motor->rotateLeft(SLOW_RPM, 0);
 		}
+    do
+    {
+      updateReadings(false);
+      diff = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
+      //if(DEBUG)Serial.println(diff);
+    }while(abs(diff) > tolerance && (isRight == (diff>0)));
+    //if(DEBUG)Serial.println("STOP");
+    motor->stopBot();
+    return true;
 	}
 	else
-		return;
-	do
-	{
-		updateReadings(false);
-		diff = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
-		//if(DEBUG)Serial.println(diff);
-	}while(abs(diff) > tolerance && (isRight == (diff>0)));
-	//if(DEBUG)Serial.println("STOP");
-	motor->stopBot();
+		return false;
+
 }
 
-void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side, int displaceOffset)
+bool Calibration::calibrateDisplacement(int distToObstacle, char front_or_side, int displaceOffset)
 {	
 	// update readings, usually executed after rotated back to spot
 	updateReadings(true);
@@ -204,41 +208,40 @@ void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side, 
 	float toleranceScale;
 	if(front_or_side == 'F')
 	{//if(DEBUG)Serial.println("DISPL Front");
-		diff = distToObstacle - IR_sensors[FM]->reading;
+    bool isMovingFront;
+		diff = -distToObstacle + IR_sensors[FM]->reading;
 		toleranceScale = 1;
 		
 		// _________________________________________ do fine calibration
-		diff = distToObstacle - IR_sensors[FM]->reading;
-    	bool isFront = diff<0;
-//    	if(DEBUG)Serial.println("Dist:"+String(distToObstacle)+" Reading:"+String(IR_sensors[FM]->reading)+" diff: "+String(diff));
+    isMovingFront = diff>0;
 		if(diff > tolerance_far || diff < tolerance_near)
 		{
 //			if(DEBUG)Serial.println("CAL Front slowly");
-			if(diff < 0) {
+			if(diff > 0) {
 				motor->moveForward(SLOW_RPM, 0);
 			}
 			else {
 				motor->moveBackward(SLOW_RPM, 0);
 			}
-			
-		}
+      do
+      {
+        updateReadings(false);
+        diff = -distToObstacle + IR_sensors[FM]->reading;
+        motor->adjustSpeed(diff>0);//Serial.println("Diff > far " + String(diff) + " > " + String(tolerance_far));
+      }while((diff > tolerance_far+15 || diff < tolerance_near) && (isMovingFront == (diff>0)));
+      //if(DEBUG)Serial.println(String(isMovingFront==diff<0));
+      motor->stopBot();
+      return true;
+  	}
 		else
-			return;
-		do
-		{
-			updateReadings(false);
-			diff = distToObstacle - IR_sensors[FM]->reading;
-			motor->adjustSpeed(diff<0);
-		}while((diff > tolerance_far || diff < tolerance_near) && (isFront == (diff<0)));
-//   if(DEBUG)Serial.println("Diff:"+String(diff)+" Front? "+String(isFront));
-		//if(DEBUG)Serial.println("STOP");
-		motor->stopBot();
+			return false;
+		
 	}
 	else if(front_or_side == 'S')
 	{//if(DEBUG)Serial.println("DISPL Side");
 		toleranceScale = 1;
 		
-		displacement_fixLater = distToObstacle - (IR_sensors[S_FR]->reading + IR_sensors[S_BR]->reading)/2;
+		displacement_fixLater = -distToObstacle + (IR_sensors[S_FR]->reading + IR_sensors[S_BR]->reading)/2;
 		// if(abs(displacement_fixLater) > 40)
 		// {
 		// 	motor->rotateLeft(105, 90);
@@ -252,7 +255,12 @@ void Calibration::calibrateDisplacement(int distToObstacle, char front_or_side, 
 			calibrateDisplacement(distToObstacle, 'F', displaceOffset);
 			delay(200);
 			motor->rotateLeft(105, 90);
+      return true;
 		}
+    else
+    {
+     return false;
+    }
 	}
 }
 
