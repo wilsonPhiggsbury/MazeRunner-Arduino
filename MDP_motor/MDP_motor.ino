@@ -24,14 +24,6 @@ void setup() {
 }
 
 void loop() {
-  delay(1000);
-  motor->moveForward(105, 2);
-  delay(1000);
   motor->moveBackward(105, 1);
   delay(1000);
-  motor->rotateRight(105, 90);
-  delay(1000);
-  motor->rotateLeft(105, 90);
-  delay(1000);
-  motor->stopBot();
 }

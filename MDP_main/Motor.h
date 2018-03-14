@@ -4,7 +4,7 @@ const int NUM_SAMPLES = 17;
 const int TPR = 2249; //Tick Per Rotation
 const int TPR_new = 520; //Tick Per Rotation
 const int CPC = 298; //Count Per Cell
-const float CPD = 4.42511574074; //Count Per Degree
+const float CPD = 2.21255787037; //4.42511574074; //Count Per Degree
 const float RPM_CONVERSION = 120/(TPR*0.000001);
 const float CELL_SIZE = 10.0; //cm
 const float WHEEL_DIAMETER = 6.0; //cm
@@ -82,10 +82,11 @@ class Motor
         void rotateLeft(float input_rpm, float degree);
         void stopBot();
         float getRpm(unsigned int readings[]);
-        long getMoveTime(float rpm, float num_cell);
-        long getRotateTime(float rpm, float degree, bool isRight);
+        uint8_t getMoveTime(float rpm, float num_cell);
+        uint8_t getRotateTime(float rpm, float degree, bool isRight);
         void resetError();
 };
 
-static long tick = 0;
+volatile static uint8_t tick = 0;
+static uint8_t half_tick = 0;
 void incrementTick();

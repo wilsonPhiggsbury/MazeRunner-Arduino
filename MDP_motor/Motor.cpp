@@ -32,7 +32,7 @@ void Motor::moveForward(float input_rpm, float cell_num)
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
-  long tickPeriod = getMoveTime(input_rpm, cell_num);
+  uint8_t tickPeriod = getMoveTime(input_rpm, cell_num);
   md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
   if(tickPeriod != 0) {
     while(tick < tickPeriod) {
@@ -50,7 +50,7 @@ void Motor::moveBackward(float input_rpm, float cell_num)
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
-  long tickPeriod = getMoveTime(input_rpm, cell_num);
+  uint8_t tickPeriod = getMoveTime(input_rpm, cell_num);
   md.setSpeeds(-1*rpmToSpeed(this->input_rpm_e2, false), -1*rpmToSpeed(this->input_rpm_e1, true));
   if(tickPeriod != 0) {
     while(tick < tickPeriod) {
@@ -65,12 +65,12 @@ void Motor::moveBackward(float input_rpm, float cell_num)
 void Motor::rotateRight(float input_rpm, float degree)
 {
   this->motor_status = COMM_ROTATE_R;
-  long tickPeriod = getRotateTime(input_rpm, degree, true);
+  uint8_t tickPeriod = getRotateTime(input_rpm, degree, true);
   md.setSpeeds(rpmToSpeed(input_rpm, false), -1*rpmToSpeed(input_rpm, true));
   if(tickPeriod != 0) {
     while(tick < tickPeriod) {
-      Serial.print("");
     }
+    Serial.println(String(tick));
     md.setBrakes(400,400);
     tick = 0;
   }
@@ -79,11 +79,13 @@ void Motor::rotateRight(float input_rpm, float degree)
 void Motor::rotateLeft(float input_rpm, float degree)
 {
   this->motor_status = COMM_ROTATE_L;
-  long tickPeriod = getRotateTime(input_rpm, degree, false);
+  uint8_t tickPeriod = getRotateTime(input_rpm, degree, false);
   md.setSpeeds(-1*rpmToSpeed(input_rpm, false), rpmToSpeed(input_rpm, true));
   if(tickPeriod != 0) {
-    while(tick < tickPeriod) {
-      Serial.print("");
+    while(1) {
+      if(tick>tickPeriod) {
+        break;
+      }
     }
     md.setBrakes(400,400);
     tick = 0;
@@ -128,7 +130,7 @@ void Motor::adjustSpeed(bool isForward)
         float e1_reading = ((e1a_reading + e1b_reading) / 2.0) + e1_offset;
         float e2_reading = ((e2a_reading + e2b_reading) / 2.0) + e2_offset;
 
-        Serial.println(String(e1_reading) + "    " + String(e2_reading));
+        //Serial.println(String(e1_reading) + "    " + String(e2_reading));
         
         this->last_last_error_e1 = this->last_error_e1;
         this->last_last_error_e2 = this->last_error_e2;
@@ -181,7 +183,7 @@ float Motor::getRpm(unsigned int readings[]) {
   return RPM_CONVERSION/takeMedian(readings);
 }
 
-long Motor::getMoveTime(float rpm, float num_cell) {
+uint8_t Motor::getMoveTime(float rpm, float num_cell) {
   //long offset = dis_time_m * num_cell + dis_time_c;
   if(num_cell == 0){
     return 0;
@@ -189,12 +191,12 @@ long Motor::getMoveTime(float rpm, float num_cell) {
   return num_cell*CPC;
 }
 
-long Motor::getRotateTime(float rpm, float degree, bool isRight) {
+uint8_t Motor::getRotateTime(float rpm, float degree, bool isRight) {
   if(degree == 0){
     return 0;
   }
   //long moveTime = (BASE_DIAMETER * degree * 1000) / (6*rpm*WHEEL_DIAMETER);
-  long offset;
+  uint8_t offset;
   if(isRight)
   {
     offset = rotate_r_m*(degree) + rotate_r_c;
@@ -219,6 +221,10 @@ void Motor::resetError()
 }
 
 void incrementTick() {
-  tick += 1;
+  half_tick++;
+  if(half_tick == 2) {
+    tick++;
+    half_tick = 0;
+  }
 }
 
