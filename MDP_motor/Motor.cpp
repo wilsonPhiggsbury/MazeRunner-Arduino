@@ -68,9 +68,11 @@ void Motor::rotateRight(float input_rpm, float degree)
   uint8_t tickPeriod = getRotateTime(input_rpm, degree, true);
   md.setSpeeds(rpmToSpeed(input_rpm, false), -1*rpmToSpeed(input_rpm, true));
   if(tickPeriod != 0) {
-    while(tick < tickPeriod) {
+    while(1) {
+      if(tick>tickPeriod) {
+        break;
+      }
     }
-    Serial.println(String(tick));
     md.setBrakes(400,400);
     tick = 0;
   }
