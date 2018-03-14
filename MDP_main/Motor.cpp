@@ -32,15 +32,18 @@ void Motor::moveForward(float input_rpm, float cell_num)
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
-  uint8_t tickPeriod = getMoveTime(input_rpm, cell_num);
+  volatile uint8_t cell_moved = 0;
   md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
   if(tickPeriod != 0) {
-    while(tick < tickPeriod) {
+    while(cell_moved < cell_num) {
+      if(tick > CPC) {
+        tick = 0;
+        cell_moved++;
+      }
       this->adjustSpeed(true);
     }
     md.setBrakes(400,400);
     this->resetError();
-    tick = 0;
   } 
 }
 
@@ -50,16 +53,19 @@ void Motor::moveBackward(float input_rpm, float cell_num)
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
-  uint8_t tickPeriod = getMoveTime(input_rpm, cell_num);
+  volatile uint8_t cell_moved = 0;
   md.setSpeeds(-1*rpmToSpeed(this->input_rpm_e2, false), -1*rpmToSpeed(this->input_rpm_e1, true));
   if(tickPeriod != 0) {
-    while(tick < tickPeriod) {
+    while(cell_moved < cell_num) {
+      if(tick > CPC) {
+        tick = 0;
+        cell_moved++;
+      }
       this->adjustSpeed(false);
     }
     md.setBrakes(400,400);
     this->resetError();
-    tick = 0;
-  } 
+  }
 }
 
 void Motor::rotateRight(float input_rpm, float degree)
@@ -183,14 +189,6 @@ float Motor::getRpm(unsigned int readings[]) {
     return 0;
   }
   return RPM_CONVERSION/takeMedian(readings);
-}
-
-uint8_t Motor::getMoveTime(float rpm, float num_cell) {
-  //long offset = dis_time_m * num_cell + dis_time_c;
-  if(num_cell == 0){
-    return 0;
-  }
-  return num_cell*CPC;
 }
 
 uint8_t Motor::getRotateTime(float rpm, float degree, bool isRight) {
