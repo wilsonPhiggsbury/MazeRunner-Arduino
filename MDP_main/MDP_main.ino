@@ -1,7 +1,5 @@
 // Voltage: 6.3
 
-#include "IR.h"
-#include "Motor.h"
 #include "Calibration.h"
 
 #define LEFT 0
@@ -42,67 +40,18 @@ void setup(){
   }
   motor = new Motor(E1A, E1B, E2A, E2B);
   calibration = new Calibration(IR_sensors, motor, DEBUGMODE);
-  
   pinMode(E1A, INPUT);
   pinMode(E1B, INPUT);
   pinMode(E2A, INPUT);
   pinMode(E2B, INPUT);
   delay(500);
-//  for(int a=0;a<20;a++)
-//  {String tmp = "";
-//  
-//    if(a==5 || a==15)
-//    {
-//      Serial.println("_____________");
-//    }Serial.print(a+String(".\t"));
-//    if(a>=5 && a<15)
-//    {
-//      motor->command("FORWARD 105 1");
-//      delay(500);
-//      motor->command("BACKWARD 105 1");
-//      delay((a-5)*100);
-//    }
-//    for(i=0; i<6; i++)
-//    {
-//      int thisReading;
-//      tmp += String(IR_sensors[i]->takeReading(true));
-//      tmp += "\t";
-//    }
-//    Serial.println(tmp);
-//    if(a==0 || a==19)
-//    {
-//      delay(200);
-//    }
-//  }
-//____________________________________
-//  for(i=0;i<15;i++)
-//  {
-//    motor->command("ROTATE_LEFT 50 " +String(i));
-//    delay(500);
-//    motor->command("ROTATE_RIGHT 20 "+String(i));
-//    delay(500);
-//    Serial.println(i);
-//  }
-//  for(i=15;i>=0;i--)
-//  {
-//    motor->command("ROTATE_LEFT 50 "+String(i));
-//    delay(500);
-//    motor->command("ROTATE_RIGHT 20 "+String(i));
-//    delay(500);
-//    Serial.println(i);
-//  }
 }
 
 void loop() {
   // take reading, send integers to algo
   String sendToAlgo = "";
-  // take dummy reading
-//  for(i=0; i<6; i++)
-//  {
-//    IR_sensors[i]->takeReading(true);
-//  }
   delay(150);
-  // take real reading
+  
   for(i=0; i<6; i++)
   {
     int j;
@@ -126,9 +75,7 @@ void loop() {
   }
   sendToAlgo += "\n";
   Serial.println(sendToAlgo);
-//  if(DEBUGMODE)Serial.print("EOL");
-  // calibrate
-  //calibration->calibrateRotation(true);
+  
   // read command, parse and execute
   while(!readCommand(&in_command)); // block until command comes in
   int start = 0;

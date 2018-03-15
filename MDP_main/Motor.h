@@ -1,9 +1,13 @@
 #include "DualVNH5019MotorShield.h"
-
+#if defined(ARDUINO) && ARDUINO >= 100
+#include "Arduino.h"
+#else
+#include "WProgram.h"
+#endif
 const int NUM_SAMPLES = 9;
 const int TPR = 2249; //Tick Per Rotation
 const uint8_t CPC = 130; //298 //Count Per Cell
-const uint8_t CPR = 193; //4.42511574074; //Count Per Right angle
+const uint8_t CPR = 193; //Count Per Right angle
 const float RPM_CONVERSION = 120/(TPR*0.000001);
 const float CELL_SIZE = 10.0; //cm
 const float WHEEL_DIAMETER = 6.0; //cm
@@ -30,14 +34,14 @@ const float e1_offset = 0;
 const float e2_offset = 0; // inc means make left motor slower
 
 //rotation time offset
-const float rotate_r_m = 0.44444444444;
-const float rotate_r_c = -20;
-const float rotate_l_m = 0.44444444444;
-const float rotate_l_c = -20;
+//const float rotate_r_m = 0.44444444444;
+//const float rotate_r_c = -20;
+//const float rotate_l_m = 0.44444444444;
+//const float rotate_l_c = -20;
 
 //distance time offset
-const float dis_time_m = 56.25;
-const float dis_time_c = -56.25;
+//const float dis_time_m = 56.25;
+//const float dis_time_c = -56.25;
 
 //command
 const char COMM_FORWARD = 'F';
@@ -83,7 +87,6 @@ class Motor
         float getRpm(unsigned int readings[]);
         uint8_t getRotateTime(float rpm, float degree, bool isRight);
         void resetError();
-        unsigned long getCorrection(int num_cells);
 };
 
 volatile static uint8_t tick = 0;

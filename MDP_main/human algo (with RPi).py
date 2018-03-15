@@ -1,5 +1,5 @@
 import socket
-from time import sleep
+import time
 
 class TcpClient():
     def __init__(self, ip, port, buffer_size=1024):
@@ -47,9 +47,9 @@ if(b=='y'):
 else:
     debug = False
 if debug:
-    eol = '\n'
+    eol = '\n\n'
 else:
-    eol = 'EOL'
+    eol = '\n'
 
 b=''
 while True:
@@ -59,9 +59,9 @@ while True:
     if a=='D':
         debug = not debug
         if debug:
-            eol = '\n'
+            eol = '\n\n'
         else:
-            eol = 'EOL'
+            eol = '\n'
     client.send(a)
     if debug:
         
@@ -69,13 +69,19 @@ while True:
             print('Collecting input...')
             sleep(0.5)
             b += client.recv()
-            
-            if b.find('EOL')!=-1:
+            print("State",state)
+            if b.find(eol)!=-1 or state==1:
+                state = 0
+                s.cancel(eventobj)
+                s.run()
                 print("___________________________")
-                print(b.replace('EOL',''))
+                print(b.replace(eol,''))
                 b = ""
                 break
     else:
-        sleep(2)
-        b = client.recv()
-        print(b)
+            time.sleep(1)
+            b = client.recv()
+            if b!='\n':
+                print(b)
+            else:
+                print('_____')

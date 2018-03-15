@@ -1,8 +1,15 @@
+#if defined(ARDUINO) && ARDUINO >= 100
+#include "Arduino.h"
+#else
+#include "WProgram.h"
+#endif
 
+#include "IR.h"
+#include "Motor.h"
+#include <math.h>
 class Calibration
 {
 	private:
-		int displacement_fixNow;
 		int displacement_fixLater;
 		IR *IR_sensors[6];
 		Motor *motor;

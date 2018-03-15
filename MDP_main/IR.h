@@ -1,4 +1,10 @@
-#define SAMPLES 71
+#if defined(ARDUINO) && ARDUINO >= 100
+#include "Arduino.h"
+#else
+#include "WProgram.h"
+#endif
+
+#define SAMPLES 21
 // IR sensor indexes
 #define FL 1// front left
 #define FM 0// front mid
@@ -7,60 +13,58 @@
 #define S_FR 4// right front(side)
 #define S_BR 5// right back (side)
 
-#define START -50
-#define INTERVAL 50
-#define FL_LIMIT 350
-#define FM_LIMIT 200
-#define FR_LIMIT 350
-#define S_FL_LIMIT 800
-#define S_FR_LIMIT 300
-#define S_BR_LIMIT 300
+// TODO: obtain more samples of long range readings
 
+#define FRONT_START -10
+#define FRONT_END 310
+#define FRONT_INTERVAL 5
+#define SIDE_START -40
+#define SIDE_END 270
+#define SIDE_INTERVAL 5
+#define LONG_START -20
+#define LONG_END 400
+#define LONG_INTERVAL 25
+
+//
+//const int FL_offsets[8]PROGMEM = {-45,0,84,147,200,229,242,249}; // 8
+//const int FM_offsets[9]PROGMEM = {-45,10,57,107,158,213,267,300,350}; // 8
+//const int FR_offsets[9]PROGMEM = {-45,15,52,105,159,209,265,300,350}; // 8
+//const int S_FL_offsets[18]PROGMEM = {-50,12,71,124,169,207,255,309,367,438,475,540,582,637,666,727,765,830}; // 10
+//const int S_FR_offsets[8]PROGMEM = {-49,8,56,99,141,193,248,283}; // 8
+//const int S_BR_offsets[8]PROGMEM = {-32,9,59,103,151,199,243,284}; // 8
+//const int FL_offsets_fine[21]PROGMEM = {-50,-45,-40,-35,-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30,35,40,45,50};
+//const int FM_offsets_fine[21]PROGMEM = {-50,-45,-40,-35,-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30,35,40,45,50};
+//const int FR_offsets_fine[21]PROGMEM = {-50,-45,-40,-35,-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30,35,40,45,50};
+//const int S_FR_offsets_fine[21]PROGMEM = {-50,-45,-40,-35,-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30,35,40,45,50};
+//const int S_BR_offsets_fine[21]PROGMEM = {-50,-45,-40,-35,-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30,35,40,45,50};
+// const int FL_offsets[8]PROGMEM = {50,100,150,200,250,300};
+// const int FM_offsets[9]PROGMEM = {50,100,150,200,250,300,350};
+// const int FR_offsets[9]PROGMEM = {50,100,150,200,250,300,350};
+// const int S_FL_offsets[18]PROGMEM = {-50,0,50,100,150,200,250,300,350,450,500,550,600,650,700,750,800,850};
+// const int S_FR_offsets[8]PROGMEM = {50,100,150,200,250,300};
+// const int S_BR_offsets[8]PROGMEM = {50,100,150,200,250,300};
+
+const int FL_offsets[63]PROGMEM = {639,607,581,561,535,511,495,473,451,442,425,410,395,383,366,358,346,337,327,318,308,301,294,289,283,279,275,267,262,255,251,242,239,235,227,221,215,213,210,205,204,200,197,193,189,187,184,181,179,177,175,173,168,166,164,162,160,155,153,151,150,149,147};
+const int FM_offsets[63]PROGMEM = {579,550,530,513,489,465,450,434,418,403,391,381,368,356,343,336,327,315,307,300,290,287,281,276,268,265,260,253,248,240,235,231,227,224,220,210,207,205,202,198,196,195,193,191,185,181,178,177,175,173,171,169,167,165,163,161,157,155,152,151,150,149,148};
+const int FR_offsets[63]PROGMEM = {652,636,622,603,583,564,550,535,520,508,493,477,462,450,435,421,410,402,390,378,373,366,353,344,340,333,325,316,313,304,301,295,293,285,280,275,270,265,257,255,251,248,246,241,238,237,234,230,227,225,222,220,218,214,210,206,204,202,200,198,197,197,197};
+const int S_FL_offsets[18]PROGMEM = {610,596,577,550,524,494,459,428,403,374,349,333,314,294,281,269,256,244};
+const int S_FR_offsets[63]PROGMEM = {517,498,472,456,437,421,405,391,375,362,347,339,331,318,315,302,294,286,278,274,266,262,257,254,245,242,238,233,230,222,218,216,214,210,205,200,197,194,187,185,183,180,178,176,170,168,167,165,164,162,160,156,159,156,154,151,149,145,143,142,141,140,135};
+const int S_BR_offsets[63]PROGMEM = {659,640,601,580,549,524,497,478,465,436,417,405,398,382,370,359,349,338,330,319,315,310,301,295,290,282,274,270,265,262,254,248,244,240,236,231,229,224,220,217,212,207,205,203,202,200,197,196,193,191,188,186,185,183,180,178,177,175,173,171,168,165,162};
 class IR
 {
     private:
         int id;
-        // Observation-based values
-        //{-50,0,50,100,150,200,250,300,350,400}
-         const int FL_offsets[8] = {-45,0,84,147,200,229,242,249}; // 8
-         const int FM_offsets[9] = {-45,10,57,107,158,213,267,300,350}; // 8
-         const int FR_offsets[9] = {-45,15,52,105,159,209,265,300,350}; // 8
-         const int S_FL_offsets[18] = {-50,12,71,124,169,207,255,309,367,438,475,540,582,637,666,727,765,830}; // 10
-         const int S_FR_offsets[8] = {-49,8,56,99,141,193,248,283}; // 8
-         const int S_BR_offsets[8] = {-32,9,59,103,151,199,243,284}; // 8
-//         const int F_shortrangeOffsets[3][6] = { // until -25 only
-//           {4,-1,-5,-10,-15,-18},
-//           {-2,-6,-3,-8,-12,-13},
-//           {6,1,-3,-6,-9,-10}
-//         };
-//         int readingConsts_fine[6][26] = {
-//            {652, 632, 609, 571, 544, 522, 505, 490, 474, 463, 449, 436, 426, 417, 407, 397, 390, 384, 374, 367, 360, 356, 350, 343,0,0},
-//            {597, 569, 544, 521, 498, 471, 454, 436, 421, 409, 393, 381, 373, 358, 348, 337, 325, 317, 310, 301, 293, 288, 283, 275,0,0},
-//            {651, 647, 636, 609, 588, 565, 547, 532, 517, 502, 492, 475, 463, 452, 438, 422, 411, 403, 392, 380, 372, 362, 355, 347,0,0},
-//            {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-//            {515, 494, 468, 452, 435, 420, 404, 393, 375, 364, 352, 340, 332, 324, 316, 303, 299, 291, 280, 275, 266, 263, 262, 253, 249, 245},
-//            {656, 629, 592, 570, 543, 521, 497, 481, 459, 442, 423, 407, 396, 384, 371, 360, 351, 339, 330, 324, 314, 310, 302, 294, 290, 286}
-//        };
-//         int readingConsts_coarse[6][10] = {
-//            {258, 246, 234, 228, 221, 215, 187, 170, 147, 140},
-//            {247, 227, 203, 189, 173, 161, 151, 139, 134, 126},
-//            {320, 293, 268, 250, 234, 219, 206, 198, 190, 184},
-//            {0,0,0,0,0,0,0,0,0,0},
-//            {220, 201, 182, 169, 157, 145, 137, 132, 123, 115},
-//            {256, 231, 214, 198, 185, 172, 164, 156, 145, 141}            
-//        };
         int fitCurve();
-        int correction();
+        int lookUptable();
         int takeMedian(int nums[]);
-        static int scaleByInterval(int variableToScale, int readings[], int start, int end, int interval);
-    	static int logisticFit(int x, float A1, float A2, float x0, float p);
-        static int cubicFit(int x, float A, float B, float C, float D);
-
-//    		static float power2Fit(float x, float xc, float A, float pl);
-//    		static float log3p1Fit(float x, float a, float b, float c);
+        int scaleByInterval(int variableToScale, const int readings[], int start, int end, int interval);
+//		static int logisticFit(int x, float A1, float A2, float x0, float p);
+//  	static int cubicFit(int x, float A, float B, float C, float D);
+//    	static float power2Fit(float x, float xc, float A, float pl);
+//    	static float log3p1Fit(float x, float a, float b, float c);
 
     public:
-    	   int reading;
+    	int reading;
         IR(int index);
         float takeReading(bool convertToDist);
 };

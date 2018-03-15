@@ -1,12 +1,5 @@
-#include "IR.h"
-#include "Motor.h"
-#include <math.h>
 #include "Calibration.h"
-#if defined(ARDUINO) && ARDUINO >= 100
-#include "Arduino.h"
-#else
-#include "WProgram.h"
-#endif
+
 // IR sensor indexes
 #define FM 0// front left
 #define FL 1// front mid
@@ -44,13 +37,12 @@
 #define TURNDEG_SCALEDOWN 0.9 //to prevent coarse rotation from overshooting
 #define TURNDISPL_SCALEDOWN 0.9 //to prevent coarse displacement from overshooting
 
-const float DEFAULT_RPM = 105;
-const float SLOW_RPM = 20;
+const short DEFAULT_RPM = 105;
+const short SLOW_RPM = 20;
 
 // public ---------------------------------------------------------------
 Calibration::Calibration(IR *IR_sensors[6], Motor *motor, bool debug)
 {
-	this->displacement_fixNow = 0; // act - cur, (+: ahead of point, -: behind of point)
 	this->displacement_fixLater = 0;// act - cur, (+: right of point -: left of point)
 	for (int i=0; i<6; i++)
 	{
@@ -83,8 +75,6 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
     limit++;
   }while((calibratedRotation || calibratedDisplacement) && limit<2);
 	
-	// if(sideUseFrontCalibration)
- //    motor->rotateLeft(DEFAULT_RPM, 90);
 	return 1;
 }
 void Calibration::informTurn(bool right)
@@ -142,8 +132,8 @@ bool Calibration::calibrateRotation(char front_or_side)
 		}
 		else
 		{
-			//if(DEBUG)Serial.println("Sensors blind, abort FRONT");
-			return;
+			//Sensors blind, abort FRONT
+			return false;
 		}
 		toleranceScale = 1;
 	}
