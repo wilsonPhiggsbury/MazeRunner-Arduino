@@ -1,5 +1,9 @@
 #include "Motor.h"
-
+#if defined(ARDUINO) && ARDUINO >= 100
+#include "Arduino.h"
+#else
+#include "WProgram.h"
+#endif
 
 Motor::Motor(int E1A, int E1B, int E2A, int E2B)
 {
@@ -29,6 +33,7 @@ void Motor::moveForward(float input_rpm, float cell_num)
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
   uint8_t cell_moved = 0;
+  unsigned long correction = this->getCorrection(cell_num);
   tick = 0;
   md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
   if(cell_num > 0) {
@@ -39,9 +44,20 @@ void Motor::moveForward(float input_rpm, float cell_num)
         cell_moved++;
       }
     }
+    delay(correction);
     md.setBrakes(400,400);
     this->resetError();
   } 
+}
+
+unsigned long Motor::getCorrection(int num_cells)
+{
+  switch(num_cells) {
+    case 1:
+      return 0;
+    default:
+      return 15*num_cells-20;  
+  }
 }
 
 void Motor::moveBackward(float input_rpm, float cell_num)
@@ -51,6 +67,7 @@ void Motor::moveBackward(float input_rpm, float cell_num)
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
   uint8_t cell_moved = 0;
+  unsigned long correction = this->getCorrection(cell_num);
   tick = 0;
   md.setSpeeds(-1*rpmToSpeed(this->input_rpm_e2, false), -1*rpmToSpeed(this->input_rpm_e1, true));
   if(cell_num > 0) {
@@ -61,6 +78,7 @@ void Motor::moveBackward(float input_rpm, float cell_num)
         cell_moved++;
       }
     }
+    delay(correction);
     md.setBrakes(400,400);
     this->resetError();
   }
@@ -196,7 +214,7 @@ uint8_t Motor::getRotateTime(float rpm, float degree, bool isRight) {
   if(isRight)
   {
 //    offset = rotate_r_m*(degree) + rotate_r_c;
-    offset = 4;
+    offset = 0;
   }
   else
   {

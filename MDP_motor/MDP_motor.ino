@@ -25,5 +25,18 @@ void setup() {
 
 void loop() {
   delay(1000);
-  motor->moveForward(105, 7);
+  motor->moveForward(105, 5);
+  delay(1000);
+  motor->rotateRight(105, 90);
+  delay(1000);
+  motor->moveForward(105, 8);
+  delay(1000);
+  motor->rotateLeft(105, 90);
+  delay(1000);
+  motor->moveForward(105, 12);
+  delay(1000);
+  motor->rotateRight(105, 90);
+  delay(1000);
+  motor->moveForward(105, 4);
+  delay(60000);
 }

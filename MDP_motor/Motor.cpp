@@ -214,7 +214,7 @@ uint8_t Motor::getRotateTime(float rpm, float degree, bool isRight) {
   if(isRight)
   {
 //    offset = rotate_r_m*(degree) + rotate_r_c;
-    offset = 4;
+    offset = 0;
   }
   else
   {

@@ -11,13 +11,13 @@ const float BASE_DIAMETER = 17.0; //cm
 const float Pi = 3.14159;
 
 //PID constant for E1
-const float k1_e1 = 0.03;
-const float k2_e1 = -0.03;
-const float k3_e1 = 0.03;
+const float k1_e1 = 0.04;
+const float k2_e1 = -0.04;
+const float k3_e1 = 0.04;
 //PID constant for E2
-const float k1_e2 = 0.03;
-const float k2_e2 = -0.03;
-const float k3_e2 = 0.03;
+const float k1_e2 = 0.04;
+const float k2_e2 = -0.04;
+const float k3_e2 = 0.04;
 
 //Motor Charac
 const float E1M = 0.31851837820234463;
@@ -27,7 +27,7 @@ const float E2C = -16.30316431466205;
 
 //Encoder offsets
 const float e1_offset = 0;
-const float e2_offset = 0; // inc means make left motor slower
+const float e2_offset = 1.5; // inc means make left motor slower
 
 //rotation time offset
 const float rotate_r_m = 0.44444444444;
