@@ -25,5 +25,5 @@ void setup() {
 
 void loop() {
   delay(1000);
-  motor->rotateRight(105, 90);
+  motor->moveForward(105, 7);
 }

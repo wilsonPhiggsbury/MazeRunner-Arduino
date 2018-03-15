@@ -1,9 +1,9 @@
 #include "DualVNH5019MotorShield.h"
 
-const int NUM_SAMPLES = 17;
+const int NUM_SAMPLES = 9;
 const int TPR = 2249; //Tick Per Rotation
-const uint8_t CPC = 105; //298 //Count Per Cell
-const uint8_t CPR = 190; //4.42511574074; //Count Per Right angle
+const uint8_t CPC = 130; //298 //Count Per Cell
+const uint8_t CPR = 193; //4.42511574074; //Count Per Right angle
 const float RPM_CONVERSION = 120/(TPR*0.000001);
 const float CELL_SIZE = 10.0; //cm
 const float WHEEL_DIAMETER = 6.0; //cm
@@ -27,7 +27,7 @@ const float E2C = -16.30316431466205;
 
 //Encoder offsets
 const float e1_offset = 0;
-const float e2_offset = 10;
+const float e2_offset = 0; // inc means make left motor slower
 
 //rotation time offset
 const float rotate_r_m = 0.44444444444;
@@ -83,6 +83,7 @@ class Motor
         float getRpm(unsigned int readings[]);
         uint8_t getRotateTime(float rpm, float degree, bool isRight);
         void resetError();
+        unsigned long getCorrection(int num_cells);
 };
 
 volatile static uint8_t tick = 0;

@@ -83,6 +83,7 @@ class Motor
         float getRpm(unsigned int readings[]);
         uint8_t getRotateTime(float rpm, float degree, bool isRight);
         void resetError();
+        unsigned long getCorrection(int num_cells);
 };
 
 volatile static uint8_t tick = 0;
