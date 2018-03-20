@@ -30,12 +30,12 @@ char lumpingInstr = 'n';
 bool exploring = false;
 
 void setup() {
+  motor = new Motor();
   Serial.begin(9600);
   for (int i = 0; i < 6; i++)
   {
     IR_sensors[i] = new IR(i);
   }
-  motor = new Motor();
   calibration = new Calibration(IR_sensors, motor, DEBUGMODE);
   delay(500);
 }

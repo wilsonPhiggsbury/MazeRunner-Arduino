@@ -7,19 +7,15 @@
 
 Motor::Motor()
 {
-    md.init();
     pinMode(E1A, INPUT);
     pinMode(E1B, INPUT);
     pinMode(E2A, INPUT);
     pinMode(E2B, INPUT);
-    attachInterrupt(digitalPinToInterrupt(3), incrementTick, RISING);
+    attachInterrupt(digitalPinToInterrupt(E1A), incrementTick, RISING);
+    md.init();
     this->desired_rpm = 0;
     this->input_rpm_e1 = 0;
     this->input_rpm_e2 = 0;
-    this->E1A = E1A;
-    this->E1B = E1A;
-    this->E2A = E2A;
-    this->E2B = E1A;
     this->error_e1 = 0;
     this->error_e2 = 0;
     this->last_error_e1 = 0;
@@ -36,19 +32,45 @@ void Motor::moveForward(float input_rpm, float cell_num)
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
-  uint8_t cell_moved = 0;
   unsigned long correction = this->getCorrection(cell_num);
   tick = 0;
   md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false), rpmToSpeed(this->input_rpm_e1, true));
-  if(cell_num > 0) {
-    while(cell_moved < cell_num) {
+  for(int i = 0; i < cell_num; i++) {
+    while(tick < CPC){
       this->adjustSpeed(true);
       if(tick > CPC) {
         tick = 0;
-        cell_moved++;
+        break;
       }
-    }
-//    delay(correction);
+    } 
+  }
+  if(cell_num > 0) {
+    delay(correction);
+    md.setBrakes(400,400);
+    this->resetError();
+  } 
+}
+
+void Motor::moveBackward(float input_rpm, float cell_num)
+{
+  this->motor_status = COMM_BACKWARD;
+  this->desired_rpm = input_rpm;
+  this->input_rpm_e1 = input_rpm;
+  this->input_rpm_e2 = input_rpm;
+  unsigned long correction = this->getCorrection(cell_num);
+  tick = 0;
+  md.setSpeeds(-1*rpmToSpeed(this->input_rpm_e2, false), -1*rpmToSpeed(this->input_rpm_e1, true));
+  for(int i = 0; i < cell_num; i++) {
+    while(tick < CPC){
+      this->adjustSpeed(false);
+      if(tick > CPC) {
+        tick = 0;
+        break;
+      }
+    } 
+  }
+  if(cell_num > 0) {
+    delay(correction);
     md.setBrakes(400,400);
     this->resetError();
   } 
@@ -61,30 +83,6 @@ unsigned long Motor::getCorrection(int num_cells)
       return 0;
     default:
       return 15*num_cells-20;  
-  }
-}
-
-void Motor::moveBackward(float input_rpm, float cell_num)
-{
-  this->motor_status = COMM_BACKWARD;
-  this->desired_rpm = input_rpm;
-  this->input_rpm_e1 = input_rpm;
-  this->input_rpm_e2 = input_rpm;
-  uint8_t cell_moved = 0;
-  unsigned long correction = this->getCorrection(cell_num);
-  tick = 0;
-  md.setSpeeds(-1*rpmToSpeed(this->input_rpm_e2, false), -1*rpmToSpeed(this->input_rpm_e1, true));
-  if(cell_num > 0) {
-    while(cell_moved < cell_num) {
-      this->adjustSpeed(false);
-      if(tick > CPC) {
-        tick = 0;
-        cell_moved++;
-      }
-    }
-    delay(correction);
-    md.setBrakes(400,400);
-    this->resetError();
   }
 }
 
@@ -144,10 +142,10 @@ void Motor::adjustSpeed(bool isForward)
     {
         // get reading
         for (int i=0; i<NUM_SAMPLES; i++) {
-          e1a_readings[i] = pulseIn(this->E1A, HIGH, 8000); //timeout 8000 microsecs
-          e1b_readings[i] = pulseIn(this->E1B, HIGH, 8000);
-          e2a_readings[i] = pulseIn(this->E2A, HIGH, 8000);
-          e2b_readings[i] = pulseIn(this->E2B, HIGH, 8000);
+          e1a_readings[i] = pulseIn(E1A, HIGH, 8000); //timeout 8000 microsecs
+          e1b_readings[i] = pulseIn(E1B, HIGH, 8000);
+          e2a_readings[i] = pulseIn(E2A, HIGH, 8000);
+          e2b_readings[i] = pulseIn(E2B, HIGH, 8000);
         }
         float e1a_reading = getRpm(e1a_readings);
         float e1b_reading = getRpm(e1b_readings);
@@ -217,13 +215,11 @@ uint8_t Motor::getRotateTime(float rpm, float degree, bool isRight) {
   int offset;
   if(isRight)
   {
-//    offset = rotate_r_m*(degree) + rotate_r_c;
-    offset = 5;
+    offset = 0;
   }
   else
   {
-//    offset = rotate_l_m*(degree) + rotate_l_c;
-    offset = 0;
+    offset = -2;
   }
   int tickPeriod = (degree/90)*CPR + offset;
   return tickPeriod;
