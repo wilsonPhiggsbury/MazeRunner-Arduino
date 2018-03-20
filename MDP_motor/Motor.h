@@ -1,23 +1,25 @@
 #include "DualVNH5019MotorShield.h"
 
+//Pins
+const int E1A = 3; //right
+const int E1B = 5;
+const int E2A = 11; //left
+const int E2B = 13;
+
 const int NUM_SAMPLES = 9;
 const int TPR = 2249; //Tick Per Rotation
-const uint8_t CPC = 130; //298 //Count Per Cell
-const uint8_t CPR = 193; //4.42511574074; //Count Per Right angle
+const uint8_t CPC = 130; //Count Per Cell
+const uint8_t CPR = 193; //Count Per Right angle
 const float RPM_CONVERSION = 120/(TPR*0.000001);
-const float CELL_SIZE = 10.0; //cm
-const float WHEEL_DIAMETER = 6.0; //cm
-const float BASE_DIAMETER = 17.0; //cm
-const float Pi = 3.14159;
 
 //PID constant for E1
-const float k1_e1 = 0.04;
-const float k2_e1 = -0.04;
-const float k3_e1 = 0.04;
+const float k1_e1 = 0.03;
+const float k2_e1 = -0.03;
+const float k3_e1 = 0.03;
 //PID constant for E2
-const float k1_e2 = 0.04;
-const float k2_e2 = -0.04;
-const float k3_e2 = 0.04;
+const float k1_e2 = 0.03;
+const float k2_e2 = -0.03;
+const float k3_e2 = 0.03;
 
 //Motor Charac
 const float E1M = 0.31851837820234463;
@@ -27,17 +29,7 @@ const float E2C = -16.30316431466205;
 
 //Encoder offsets
 const float e1_offset = 0;
-const float e2_offset = 1.5; // inc means make left motor slower
-
-//rotation time offset
-const float rotate_r_m = 0.44444444444;
-const float rotate_r_c = -20;
-const float rotate_l_m = 0.44444444444;
-const float rotate_l_c = -20;
-
-//distance time offset
-const float dis_time_m = 56.25;
-const float dis_time_c = -56.25;
+const float e2_offset = 3; // inc means make left motor slower
 
 //command
 const char COMM_FORWARD = 'F';
@@ -49,10 +41,6 @@ class Motor
 {
     private:
         DualVNH5019MotorShield md;
-        int E1A;
-        int E1B;
-        int E2A;
-        int E2B;
         float desired_rpm;
         float input_rpm_e1;
         float input_rpm_e2;
@@ -66,12 +54,11 @@ class Motor
         float last_error_e2;
         float last_last_error_e1;
         float last_last_error_e2;
-        long commandPeriod;
         
     public:
         bool isRunning;
         char motor_status;
-        Motor(int E1A, int E1B, int E2A, int E2B);
+        Motor();
         int rpmToSpeed(float rpm, boolean isRight);
         void adjustSpeed(bool isForward);
         unsigned int takeMedian(unsigned int nums[]);
