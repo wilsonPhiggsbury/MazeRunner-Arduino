@@ -12,7 +12,7 @@ Motor::Motor()
     pinMode(E1B, INPUT);
     pinMode(E2A, INPUT);
     pinMode(E2B, INPUT);
-    attachInterrupt(digitalPinToInterrupt(E1A), incrementTick, RISING);
+    attachInterrupt(digitalPinToInterrupt(3), incrementTick, RISING);
     this->desired_rpm = 0;
     this->input_rpm_e1 = 0;
     this->input_rpm_e2 = 0;
@@ -48,7 +48,7 @@ void Motor::moveForward(float input_rpm, float cell_num)
         cell_moved++;
       }
     }
-    delay(correction);
+//    delay(correction);
     md.setBrakes(400,400);
     this->resetError();
   } 

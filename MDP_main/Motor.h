@@ -7,7 +7,7 @@ const int E2B = 13;
 
 const int NUM_SAMPLES = 9;
 const int TPR = 2249; //Tick Per Rotation
-const uint8_t CPC = 130; //298 //Count Per Cell
+const uint8_t CPC = 110; //298 //Count Per Cell
 const uint8_t CPR = 193; //4.42511574074; //Count Per Right angle
 const float RPM_CONVERSION = 120/(TPR*0.000001);
 const float CELL_SIZE = 10.0; //cm
@@ -92,5 +92,5 @@ class Motor
 };
 
 volatile static uint8_t tick = 0;
-static uint8_t half_tick = 0;
+volatile static uint8_t half_tick = 0;
 void incrementTick();

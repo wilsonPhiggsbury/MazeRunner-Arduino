@@ -64,11 +64,11 @@ int IR::scaleByInterval(int voltageToScale, const int voltageSamples[], int star
 {
 	int maxIndex = (endDist-startDist)/interval + 1; // 8 for -50~300 + 50, 4 for 0~300 +100
 	int i;
-//  // Actual Versus Ideal
-//  // voltageSamples[5] stands for : ACTUAL values at range -121, 5, 34, ..., 218
-//  // to generate IDEAL numbers, use i*50: ideal ranges -50, 0, 50, ..., 300
-//  // get the offset, required to scale by how much?
-//  // proceed to determine which range the ACTUAL value falls in [-50,0] or [0,50] or ... or [250,300]
+  // Actual Versus Ideal
+  // voltageSamples[5] stands for : ACTUAL values at range -121, 5, 34, ..., 218
+  // to generate IDEAL numbers, use i*50: ideal ranges -50, 0, 50, ..., 300
+  // get the offset, required to scale by how much?
+  // proceed to determine which range the ACTUAL value falls in [-50,0] or [0,50] or ... or [250,300]
   if(voltageToScale > pgm_read_word(voltageSamples+i))
     return -900;;
   for(i=0; i<maxIndex-1; i++)

@@ -92,5 +92,5 @@ class Motor
 };
 
 volatile static uint8_t tick = 0;
-static uint8_t half_tick = 0;
+volatile static uint8_t half_tick = 0;
 void incrementTick();
