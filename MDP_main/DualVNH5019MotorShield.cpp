@@ -1,4 +1,5 @@
 #include "DualVNH5019MotorShield.h"
+#include "pins_arduino.h"
 
 // Constructors ////////////////////////////////////////////////////////////////
 
@@ -7,12 +8,10 @@ DualVNH5019MotorShield::DualVNH5019MotorShield()
   //Pin map
   _INA1 = 2;
   _INB1 = 4;
-  _EN1DIAG1 = 6;
-  _CS1 = A0; 
+  _EN1DIAG1 = 6; 
   _INA2 = 7;
   _INB2 = 8;
   _EN2DIAG2 = 12;
-  _CS2 = A1;
 }
 
 DualVNH5019MotorShield::DualVNH5019MotorShield(unsigned char INA1, unsigned char INB1, unsigned char EN1DIAG1, unsigned char CS1, 
@@ -23,11 +22,9 @@ DualVNH5019MotorShield::DualVNH5019MotorShield(unsigned char INA1, unsigned char
   _INA1 = INA1;
   _INB1 = INB1;
   _EN1DIAG1 = EN1DIAG1;
-  _CS1 = CS1;
   _INA2 = INA2;
   _INB2 = INB2;
   _EN2DIAG2 = EN2DIAG2;
-  _CS2 = CS2;
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
@@ -39,12 +36,10 @@ void DualVNH5019MotorShield::init()
   pinMode(_INB1,OUTPUT);
   pinMode(_PWM1,OUTPUT);
   pinMode(_EN1DIAG1,INPUT);
-  pinMode(_CS1,INPUT);
   pinMode(_INA2,OUTPUT);
   pinMode(_INB2,OUTPUT);
   pinMode(_PWM2,OUTPUT);
   pinMode(_EN2DIAG2,INPUT);
-  pinMode(_CS2,INPUT);
   #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__)
   // Timer 1 configuration
   // prescaler: clockI/O / 1
@@ -177,20 +172,6 @@ void DualVNH5019MotorShield::setBrakes(int m1Brake, int m2Brake)
 {
   setM1Brake(m1Brake);
   setM2Brake(m2Brake);
-}
-
-// Return motor 1 current value in milliamps.
-unsigned int DualVNH5019MotorShield::getM1CurrentMilliamps()
-{
-  // 5V / 1024 ADC counts / 144 mV per A = 34 mA per count
-  return analogRead(_CS1) * 34;
-}
-
-// Return motor 2 current value in milliamps.
-unsigned int DualVNH5019MotorShield::getM2CurrentMilliamps()
-{
-  // 5V / 1024 ADC counts / 144 mV per A = 34 mA per count
-  return analogRead(_CS2) * 34;
 }
 
 // Return error status for motor 1 
