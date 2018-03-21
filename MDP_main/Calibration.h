@@ -11,6 +11,7 @@ class Calibration
 {
 	private:
 		int displacement_fixLater;
+    int8_t trustedSensorForDist;
 		IR *IR_sensors[6];
 		Motor *motor;
     // main internal functions
@@ -19,6 +20,7 @@ class Calibration
     // subroutines & utilities
     void fixDisplacement(bool useTolerance);
     void updateReadings(bool wait);
+    bool sensorValid(int sensorID);
     bool DEBUG;
 
 	public:

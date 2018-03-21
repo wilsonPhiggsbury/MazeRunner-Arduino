@@ -56,6 +56,12 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
 	bool calibratedRotation = false;
 	bool calibratedDisplacement = false;
   uint8_t limit = 0;
+  // guard condition: back up if too close
+  if(IR_sensors[FM]->reading == -900)
+  {
+    motor->moveBackward(105,1);
+    updateReadings(true);
+  }
 	// check whether in rotate range
 	/* condition to fufil before updating front displacement  (displacement_fixNow):
 	*   front middle sensor indicates distance is between 0 and 1
@@ -99,7 +105,7 @@ void Calibration::toggleDebug()
 bool Calibration::calibrateRotation(char front_or_side)
 {
 	updateReadings(true);
-	int sensorwidth,diff,tolerance,sensor1,sensor2;
+	int sensorwidth,diff,diff2,tolerance,sensor1,sensor2;
 	float turnDegree, toleranceScale;
 	String lr_command;
 	if(front_or_side == 'F')
@@ -107,32 +113,36 @@ bool Calibration::calibrateRotation(char front_or_side)
   //if(DEBUG)Serial.println("ROT Front");
     tolerance = ROTATION_FINE_TOLERANCE_FRONT;
 		// smart choice of sensors: if blind, use the other two!
-		if(IR_sensors[FL]->reading != 900 && IR_sensors[FR]->reading != 900)
+		if(sensorValid(FL) && sensorValid(FR))
 		{
 			sensor1 = FL;
 			sensor2 = FR;
+      trustedSensorForDist = FM;
 			sensorwidth = FRONT_SENSOR_WIDTH;
       //if(DEBUG)Serial.println("L & R");
 		}
-		else if(IR_sensors[FL]->reading != 900 && IR_sensors[FR]->reading == 900 && IR_sensors[FM]->reading != 900)
+		else if(sensorValid(FL) && !sensorValid(FR) && sensorValid(FM))
 		{
 			// Only right sensor blind
 			sensor1 = FL;
 			sensor2 = FM;
+      trustedSensorForDist = FL;
 			sensorwidth = 9;
       //if(DEBUG)Serial.println("L & M");
 		}
-		else if(IR_sensors[FL]->reading == 900 && IR_sensors[FR]->reading != 900 && IR_sensors[FM]->reading != 900)
+		else if(!sensorValid(FL) && sensorValid(FR) && sensorValid(FM))
 		{
 			// Only left sensor blind
 			sensor1 = FM;
 			sensor2 = FR;
+      trustedSensorForDist = FR;
 			sensorwidth = 8;
       //if(DEBUG)Serial.println("M & R");
 		}
 		else
 		{
 			//Sensors blind, abort FRONT
+      trustedSensorForDist = -1;
 			return false;
 		}
 		toleranceScale = 1;
@@ -164,13 +174,26 @@ bool Calibration::calibrateRotation(char front_or_side)
 	// Potentially can switch over to FR and FL again for case 'F'
 	diff = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
 	bool isRight = diff > 0;
+//  uint8_t counter = 0;
 	if(abs(diff) > tolerance*toleranceScale)
 	{
 		//if(DEBUG)Serial.println(lr_command + SLOW_RPM);
 		if(diff > 0) {
+      motor->rotateLeft(SLOW_RPM, 0);
+      do{
+        updateReadings(false);
+        diff2 = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
+      }while(diff2 <= diff);
+      motor->stopBot();
 			motor->rotateRight(SLOW_RPM, 0);
 		}
 		else {
+      motor->rotateRight(SLOW_RPM, 0);
+      do{
+        updateReadings(false);
+        diff2 = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
+      }while(diff2 >= diff);
+      motor->stopBot();
 			motor->rotateLeft(SLOW_RPM, 0);
 		}
     do
@@ -199,7 +222,7 @@ bool Calibration::calibrateDisplacement(int distToObstacle, char front_or_side, 
 	if(front_or_side == 'F')
 	{//if(DEBUG)Serial.println("DISPL Front");
     bool isMovingFront;
-		diff = -distToObstacle + IR_sensors[FM]->reading;
+		diff = -distToObstacle + IR_sensors[trustedSensorForDist]->reading;
 		toleranceScale = 1;
 		
 		// _________________________________________ do fine calibration
@@ -216,7 +239,7 @@ bool Calibration::calibrateDisplacement(int distToObstacle, char front_or_side, 
       do
       {
         updateReadings(false);
-        diff = -distToObstacle + IR_sensors[FM]->reading;
+        diff = -distToObstacle + IR_sensors[trustedSensorForDist]->reading;
         motor->adjustSpeed(diff>0);//Serial.println("Diff > far " + String(diff) + " > " + String(tolerance_far));
       }while((diff > tolerance_far+15 || diff < tolerance_near) && (isMovingFront == (diff>0)));
       //if(DEBUG)Serial.println(String(isMovingFront==diff<0));
@@ -312,5 +335,9 @@ void Calibration::updateReadings(bool wait)
 	IR_sensors[i]->takeReading(true);
 	}
 	////if(DEBUG)Serial.println();
+}
+bool Calibration::sensorValid(int sensorID)
+{
+  return !(IR_sensors[sensorID]->reading == 900 || IR_sensors[sensorID]->reading == -900);
 }
 

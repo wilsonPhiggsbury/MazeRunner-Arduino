@@ -8,18 +8,18 @@ const int E2B = 13;
 
 const int NUM_SAMPLES = 9;
 const int TPR = 2249; //Tick Per Rotation
-const uint8_t CPC = 130; //Count Per Cell
+const uint8_t CPC = 129; //Count Per Cell
 const uint8_t CPR = 193; //Count Per Right angle
 const float RPM_CONVERSION = 120/(TPR*0.000001);
 
 //PID constant for E1
-const float k1_e1 = 0.03;
-const float k2_e1 = -0.03;
-const float k3_e1 = 0.03;
+const float k1_e1 = 0.05;
+const float k2_e1 = -0.05;
+const float k3_e1 = 0.05;
 //PID constant for E2
-const float k1_e2 = 0.03;
-const float k2_e2 = -0.03;
-const float k3_e2 = 0.03;
+const float k1_e2 = 0.05;
+const float k2_e2 = -0.05;
+const float k3_e2 = 0.05;
 
 //Motor Charac
 const float E1M = 0.31851837820234463;
@@ -29,7 +29,7 @@ const float E2C = -16.30316431466205;
 
 //Encoder offsets
 const float e1_offset = 0;
-const float e2_offset = 3; // inc means make left motor slower
+const float e2_offset = 2; // inc means make left motor slower
 
 //command
 const char COMM_FORWARD = 'F';

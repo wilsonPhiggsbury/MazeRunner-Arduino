@@ -38,11 +38,8 @@ void Motor::moveForward(float input_rpm, float cell_num)
   for(int i = 0; i < cell_num; i++) {
     while(tick < CPC){
       this->adjustSpeed(true);
-      if(tick > CPC) {
-        tick = 0;
-        break;
-      }
-    } 
+    }
+    tick = 0;
   }
   if(cell_num > 0) {
     delay(correction);
