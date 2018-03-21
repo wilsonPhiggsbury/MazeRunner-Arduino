@@ -10,5 +10,5 @@ void setup() {
 
 void loop() {
   delay(1000);
-  motor->rotateLeft(105, 90);
+  motor->moveBackward(105, 1);
 }
