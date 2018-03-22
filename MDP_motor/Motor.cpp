@@ -26,60 +26,37 @@ Motor::Motor()
     tick = 0;
 }
 
-void Motor::moveForward(float input_rpm, float cell_num)
+void Motor::moveForward(float input_rpm, int cell_num)
 {
   this->motor_status = COMM_FORWARD;
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
-  unsigned long correction = this->getCorrection(cell_num);
   tick = 0;
   md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, true), rpmToSpeed(this->input_rpm_e1, true, true));
-  for(int i = 0; i < cell_num; i++) {
-    while(tick < CPC){
+  if(cell_num > 0) {
+    while(tick < CPC_F[cell_num]){
       this->adjustSpeed(true);
     }
-    tick = 0;
-  }
-  if(cell_num > 0) {
-    delay(correction);
     md.setBrakes(400,400);
     this->resetError();
   } 
 }
 
-void Motor::moveBackward(float input_rpm, float cell_num)
+void Motor::moveBackward(float input_rpm, int cell_num)
 {
   this->motor_status = COMM_BACKWARD;
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
-  unsigned long correction = this->getCorrection(cell_num);
   tick = 0;
   md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, false), rpmToSpeed(this->input_rpm_e1, true, false));
-  for(int i = 0; i < cell_num; i++) {
-    while(tick < CPC){
-      this->adjustSpeed(false);
-      if(tick > CPC) {
-        tick = 0;
-        break;
-      }
-    } 
-  }
   if(cell_num > 0) {
-    delay(correction);
+    while(tick < CPC_B[cell_num]){
+      this->adjustSpeed(false);
+    }
     md.setBrakes(400,400);
     this->resetError();
-  } 
-}
-
-unsigned long Motor::getCorrection(int num_cells)
-{
-  switch(num_cells) {
-    case 1:
-      return 0;
-    default:
-      return 15*num_cells-20;  
   }
 }
 
@@ -185,7 +162,7 @@ void Motor::adjustSpeed(bool isForward)
           md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, true), rpmToSpeed(this->input_rpm_e1, true, true));
         }
         else {
-          md.setSpeeds(-1*rpmToSpeed(this->input_rpm_e2, false, false), rpmToSpeed(this->input_rpm_e1, true, false));
+          md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, false), rpmToSpeed(this->input_rpm_e1, true, false));
         }
     }
 }
@@ -224,16 +201,7 @@ uint8_t Motor::getRotateTime(float rpm, float degree, bool isRight) {
   if(degree == 0){
     return 0;
   }
-  int offset;
-  if(isRight)
-  {
-    offset = 4;
-  }
-  else
-  {
-    offset = -2;
-  }
-  int tickPeriod = (degree/90)*CPR + offset;
+  int tickPeriod = (degree/90)*CPR + isRight ? ROTATE_OFFSET_RIGHT : ROTATE_OFFSET_LEFT;
   return tickPeriod;
 }
 
