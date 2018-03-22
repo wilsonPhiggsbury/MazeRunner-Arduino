@@ -78,10 +78,10 @@ class Motor
         void rotateLeft(float input_rpm, float degree);
         void stopBot();
         float getRpm(unsigned int readings[]);
-        uint8_t getRotateTime(float rpm, float degree, bool isRight);
+        int getRotateTime(float rpm, float degree, bool isRight);
         void resetError();
 };
 
-volatile static uint8_t tick = 0;
-static uint8_t half_tick = 0;
+volatile static uint8_t tick_MSB = 0;
+volatile static uint8_t tick_LSB = 0;
 void incrementTick();

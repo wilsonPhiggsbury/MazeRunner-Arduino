@@ -59,7 +59,11 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
   // guard condition: back up if too close
   if(IR_sensors[FM]->reading == -900)
   {
-    motor->moveBackward(105,1);
+    motor->moveBackward(20,0);
+    do{
+      updateReadings(false);
+    }while(!sensorValid(FM));
+    motor->stopBot();
     updateReadings(true);
   }
 	// check whether in rotate range
@@ -77,7 +81,7 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
     calibratedRotation = calibrateRotation(front_or_side);
     
     // check displacement, fine or corase subroutine?
-    calibratedDisplacement = calibrateDisplacement(distInTheory*100, front_or_side, 0);//front_or_side=='S'?0:0);
+    if(trustedSensorForDist != -1)calibratedDisplacement = calibrateDisplacement(distInTheory*100, front_or_side, 0);//front_or_side=='S'?0:0);
     limit++;
   }while((calibratedRotation || calibratedDisplacement) && limit<2);
 	
@@ -240,6 +244,7 @@ bool Calibration::calibrateDisplacement(int distToObstacle, char front_or_side, 
       {
         updateReadings(false);
         diff = -distToObstacle + IR_sensors[trustedSensorForDist]->reading;
+//        if(!isMovingFront)Serial.println("Diff < toleranceNear: "+String(diff)+" < " + String(tolerance_far)+" TRUSTING "+String(trustedSensorForDist));
         motor->adjustSpeed(diff>0);//Serial.println("Diff > far " + String(diff) + " > " + String(tolerance_far));
       }while((diff > tolerance_far+15 || diff < tolerance_near) && (isMovingFront == (diff>0)));
       //if(DEBUG)Serial.println(String(isMovingFront==diff<0));
@@ -255,13 +260,6 @@ bool Calibration::calibrateDisplacement(int distToObstacle, char front_or_side, 
 		toleranceScale = 1;
 		
 		displacement_fixLater = -distToObstacle + (IR_sensors[S_FR]->reading + IR_sensors[S_BR]->reading)/2;
-		// if(abs(displacement_fixLater) > 40)
-		// {
-		// 	motor->rotateLeft(105, 90);
-		// 	informTurn(false);
-		// 	delay(250);
-		// 	motor->rotateRight(105, 90);
-		// }
 		if(displacement_fixLater > tolerance_far || displacement_fixLater < tolerance_near)
 		{
 			motor->rotateRight(105, 90);

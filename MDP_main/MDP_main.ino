@@ -19,6 +19,7 @@ const float DEFAULT_RPM = 105;
 */
 
 bool DEBUGMODE = false;
+bool raw = false;
 
 IR *IR_sensors[6];
 Motor *motor;
@@ -51,9 +52,9 @@ void loop() {
     if (i == 1)j = 0;
     else if (i == 0)j = 1;
     else j = i;
-    IR_sensors[j]->takeReading(true);
+    IR_sensors[j]->takeReading(!raw);
     int thisReading;
-    if (!DEBUGMODE)
+    if (!DEBUGMODE && !raw)
     {
       thisReading = IR_sensors[j]->reading;
       if (thisReading < 0)
@@ -144,6 +145,10 @@ bool executeInstruction(String instr, int instr_len)
   {
     DEBUGMODE = !DEBUGMODE;
     calibration->toggleDebug();
+  }
+  else if (instr == "R")
+  {
+    raw = !raw;
   }
   else
     return false;
