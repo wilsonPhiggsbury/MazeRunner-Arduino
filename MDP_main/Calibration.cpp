@@ -57,12 +57,12 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side)
 	bool calibratedDisplacement = false;
   uint8_t limit = 0;
   // guard condition: back up if too close
-  if(IR_sensors[FM]->reading == -900)
+  if(!sensorValid(FL) || !sensorValid(FM) || !sensorValid(FR))
   {
     motor->moveBackward(20,0);
     do{
       updateReadings(false);
-    }while(!sensorValid(FM));
+    }while(!sensorValid(FL) || !sensorValid(FM) || !sensorValid(FR));
     motor->stopBot();
     updateReadings(true);
   }
