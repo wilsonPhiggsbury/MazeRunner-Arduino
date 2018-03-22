@@ -6,29 +6,29 @@ const int E1B = 5;
 const int E2A = 11; //left
 const int E2B = 13;
 
-const int NUM_SAMPLES = 9;
+const int NUM_SAMPLES = 7;
 const int TPR = 2249; //Tick Per Rotation
 const float RPM_CONVERSION = 120/(TPR*0.000001);
 
 // Distance params - change these values if distance travelled is inaccurate
-const int CPC_F[17] = {130, 260, 390, 520, 650, 780};
-const int CPC_B[17] = {130, 260, 390, 520, 650, 780};
+const int CPC_F[17] = {265, 600, 900, 1200, 1500, 780};
+const int CPC_B[17] = {265, 600, 900, 1200, 1500, 780};
 // Orientation params - change these values if the bot is not runnning straight
 const float e1_offset = 2; // inc means make right motor slower
 const float e2_offset = 0; // inc means make left motor slower
 // Rotation params - change these values if the rotation is not 90 degrees
-const uint8_t CPR = 193; // Count Per Right angle
-const int ROTATE_OFFSET_RIGHT = 4; // inc means rotate right more
-const int ROTATE_OFFSET_LEFT = -2; // inc means rotate left more
+const int CPR = 400; // Count Per Right angle
+const int ROTATE_OFFSET_RIGHT = -30; // inc means rotate right more
+const int ROTATE_OFFSET_LEFT = 15; // inc means rotate left more
 
 //PID constant for E1
-const float k1_e1 = 0.07;
-const float k2_e1 = -0.07;
-const float k3_e1 = 0.07;
+const float k1_e1 = 0.04;
+const float k2_e1 = -0.04;
+const float k3_e1 = 0.04;
 //PID constant for E2
-const float k1_e2 = 0.07;
-const float k2_e2 = -0.07;
-const float k3_e2 = 0.07;
+const float k1_e2 = 0.04;
+const float k2_e2 = -0.04;
+const float k3_e2 = 0.04;
 
 //Motor Charac
 const float F_E1M = 0.31851837820234463;
