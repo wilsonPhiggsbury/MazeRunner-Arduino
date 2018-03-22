@@ -46,6 +46,24 @@ void Motor::moveForward(float input_rpm, int cell_num)
   } 
 }
 
+void Motor::moveForwardCustom(float input_rpm, int desiredTick)
+{
+  this->motor_status = COMM_FORWARD;
+  this->desired_rpm = input_rpm;
+  this->input_rpm_e1 = input_rpm;
+  this->input_rpm_e2 = input_rpm;
+  
+  uint8_t CPC_MSB = (desiredTick>>8) & 0xFF;
+  uint8_t CPC_LSB = (desiredTick) & 0x00FF;
+  md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, true), rpmToSpeed(this->input_rpm_e1, true, true));
+  tick_LSB = tick_MSB = 0;
+    while(tick_MSB < CPC_MSB || tick_LSB < CPC_LSB){
+      this->adjustSpeed(true);
+    }
+    md.setBrakes(400,400);
+    this->resetError();
+}
+
 void Motor::moveBackward(float input_rpm, int cell_num)
 {
   this->motor_status = COMM_BACKWARD;

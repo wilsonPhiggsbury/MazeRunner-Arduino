@@ -23,7 +23,7 @@ Motor::Motor()
     this->last_last_error_e1 = 0;
     this->last_last_error_e2 = 0;
     this->motor_status = COMM_FORWARD;
-    tick = 0;
+    tick_LSB = tick_MSB = 0;
 }
 
 void Motor::moveForward(float input_rpm, int cell_num)
@@ -32,10 +32,13 @@ void Motor::moveForward(float input_rpm, int cell_num)
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
-  tick = 0;
+  
+  uint8_t CPC_MSB = (CPC_F[cell_num-1]>>8) & 0xFF;
+  uint8_t CPC_LSB = (CPC_F[cell_num-1]) & 0x00FF;
   md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, true), rpmToSpeed(this->input_rpm_e1, true, true));
+  tick_LSB = tick_MSB = 0;
   if(cell_num > 0) {
-    while(tick < CPC_F[cell_num]){
+    while(tick_MSB < CPC_MSB || tick_LSB < CPC_LSB){
       this->adjustSpeed(true);
     }
     md.setBrakes(400,400);
@@ -49,10 +52,12 @@ void Motor::moveBackward(float input_rpm, int cell_num)
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
-  tick = 0;
+  uint8_t CPC_MSB = (CPC_B[cell_num-1]>>8) & 0xFF;
+  uint8_t CPC_LSB = (CPC_B[cell_num-1]) & 0x00FF;
   md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, false), rpmToSpeed(this->input_rpm_e1, true, false));
+  tick_LSB = tick_MSB = 0;
   if(cell_num > 0) {
-    while(tick < CPC_B[cell_num]){
+    while(tick_MSB < CPC_MSB || tick_LSB < CPC_LSB){
       this->adjustSpeed(false);
     }
     md.setBrakes(400,400);
@@ -63,14 +68,14 @@ void Motor::moveBackward(float input_rpm, int cell_num)
 void Motor::rotateRight(float input_rpm, float degree)
 {
   this->motor_status = COMM_ROTATE_R;
-  uint8_t tickPeriod = getRotateTime(input_rpm, degree, true);
-  tick = 0;
+  int tickPeriod = getRotateTime(input_rpm, degree, true);
+  uint8_t tickPeriod_MSB = (tickPeriod>>8) & 0xFF;
+  uint8_t tickPeriod_LSB = (tickPeriod) & 0xFF;
   md.setSpeeds(rpmToSpeed(input_rpm, false, true), rpmToSpeed(input_rpm, true, false));
+  tick_MSB = tick_LSB = 0;
   if(tickPeriod != 0) {
-    while(1) {
-      if(tick>tickPeriod) {
-        break;
-      }
+    while(tick_MSB < tickPeriod_MSB || tick_LSB < tickPeriod_LSB){
+      
     }
     md.setBrakes(400,400);
   }
@@ -79,14 +84,14 @@ void Motor::rotateRight(float input_rpm, float degree)
 void Motor::rotateLeft(float input_rpm, float degree)
 {
   this->motor_status = COMM_ROTATE_L;
-  uint8_t tickPeriod = getRotateTime(input_rpm, degree, false);
-  tick = 0;
+  int tickPeriod = getRotateTime(input_rpm, degree, false);
+  uint8_t tickPeriod_MSB = (tickPeriod>>8) & 0xFF;
+  uint8_t tickPeriod_LSB = (tickPeriod) & 0xFF;
   md.setSpeeds(rpmToSpeed(input_rpm, false, false), rpmToSpeed(input_rpm, true, true));
+  tick_MSB = tick_LSB = 0;
   if(tickPeriod != 0) {
-    while(1) {
-      if(tick>tickPeriod) {
-        break;
-      }
+    while(tick_MSB < tickPeriod_MSB || tick_LSB < tickPeriod_LSB){
+      
     }
     md.setBrakes(400,400);
   }
@@ -197,11 +202,11 @@ float Motor::getRpm(unsigned int readings[]) {
   return RPM_CONVERSION/takeMedian(readings);
 }
 
-uint8_t Motor::getRotateTime(float rpm, float degree, bool isRight) {
+int Motor::getRotateTime(float rpm, float degree, bool isRight) {
   if(degree == 0){
     return 0;
   }
-  int tickPeriod = (degree/90)*CPR + isRight ? ROTATE_OFFSET_RIGHT : ROTATE_OFFSET_LEFT;
+  int tickPeriod = (degree/90)*CPR + (isRight ? ROTATE_OFFSET_RIGHT : ROTATE_OFFSET_LEFT);
   return tickPeriod;
 }
 
@@ -216,10 +221,14 @@ void Motor::resetError()
 }
 
 void incrementTick() {
-  half_tick++;
-  if(half_tick == 2) {
-    tick++;
-    half_tick = 0;
+  if(tick_LSB == 255)
+  {
+    tick_LSB = 0;
+    tick_MSB++;
+  }
+  else
+  {
+    tick_LSB++;
   }
 }
 

@@ -10,5 +10,5 @@ void setup() {
 
 void loop() {
   delay(1000);
-  motor->moveForward(105, 1);
+  motor->moveForward(105, 4);
 }
