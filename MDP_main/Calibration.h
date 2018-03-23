@@ -16,7 +16,7 @@ class Calibration
 		Motor *motor;
     // main internal functions
     bool calibrateRotation(char front_or_side);
-    bool calibrateDisplacement(int distToObstacle, char front_or_side, int displaceOffset);
+    bool calibrateDisplacement(int distToObstacle, char front_or_side);
     // subroutines & utilities
     void fixDisplacement(bool useTolerance);
     void updateReadings(bool wait);

@@ -44,11 +44,11 @@ void setup() {
 void loop() {
   // take reading, send integers to algo
   String sendToAlgo = "";
+  int j;
   delay(150);
 
   for (i = 0; i < 6; i++)
   {
-    int j;
     if (i == 1)j = 0;
     else if (i == 0)j = 1;
     else j = i;
@@ -73,24 +73,8 @@ void loop() {
   // read command, parse and execute
   while (!readCommand(&in_command)); // block until command comes in
   int start = 0;
-  int end = 1;
-  while (end <= in_command.length()) // newline included, do not remove (do not replace <= with <)
-  {
-    if (in_command.charAt(start) == 'F' || in_command.charAt(start) == 'B') // instructions to be lumped
-    {
-      while (in_command.charAt(end) == in_command.charAt(start)) // expand instruction length until end of lump
-      {
-        end++;
-      }
-    }
-    bool isHandled = executeInstruction(in_command.substring(start, end), end - start);
-    if (isHandled)
-    {
-      start = end;
-      delay(200);
-    }
-    end++;
-  }
+  int end = 0;
+  
   in_command = "";
 }
 bool executeInstruction(String instr, int instr_len)

@@ -1,4 +1,5 @@
 #include "Motor.h"
+#include "Utilities.h"
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
 #else
@@ -172,34 +173,13 @@ void Motor::adjustSpeed(bool isForward)
     }
 }
 
-unsigned int Motor::takeMedian(unsigned int nums[])
-{
-    int size = sizeof(nums)/sizeof(nums[0]);
-        // insertion sort the nums array
-    for(int i=1; i<size; i++)
-    {
-        unsigned int tmp;
-        // swap values until previous value is not larger than next value
-        int j = i;
-        while(j!=0 && nums[j] < nums[j-1])
-        {
-          tmp = nums[j];
-          nums[j] = nums[j-1];
-          nums[j-1] = tmp;
-          j--;
-        }
-    }
-    // insertion sort done
-    // take the middle value
-    return nums[(NUM_SAMPLES-1)/2];
-}
 
-float Motor::getRpm(unsigned int readings[]) {
-  unsigned int median = this->takeMedian(readings);
+float Motor::getRpm(int readings[]) {
+  int median = Utilities::takeMedian(readings,NUM_SAMPLES);
   if(median == 0) {
     return 0;
   }
-  return RPM_CONVERSION/takeMedian(readings);
+  return RPM_CONVERSION/Utilities::takeMedian(readings,NUM_SAMPLES);
 }
 
 int Motor::getRotateTime(float rpm, float degree, bool isRight) {

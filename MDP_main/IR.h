@@ -65,7 +65,6 @@ class IR
         int id;
         int fitCurve();
         int lookUptable();
-        int takeMedian(int nums[]);
         int scaleByInterval(int variableToScale, const int readings[], int start, int end, int interval);
 //		static int logisticFit(int x, float A1, float A2, float x0, float p);
  	

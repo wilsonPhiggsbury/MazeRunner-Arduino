@@ -1,5 +1,5 @@
 #include "IR.h"
-
+#include "Utilities.h"
 
 IR::IR(int id)
 {
@@ -19,7 +19,7 @@ float IR::takeReading(bool convertToDist)
 	{
 		voltageMedians[j] = analogRead(this->id);
 	}
-	this->reading = takeMedian(voltageMedians);
+	this->reading = Utilities::takeMedian(voltageMedians,SAMPLES);
 	if(convertToDist)
 	{
 		this->reading = lookUptable();
@@ -86,27 +86,6 @@ int IR::scaleByInterval(int voltageToScale, const int voltageSamples[], int star
   }
   return 900;
 }
-
- int IR::takeMedian(int nums[SAMPLES])
- {
-   // insertion sort the nums array
- 	for(int i=1; i<SAMPLES; i++)
- 	{
- 		int tmp;
- 		// swap values until previous value is not larger than next value
- 		int j = i;
- 		while(j!=0 && nums[j] < nums[j-1])
- 		{
- 		  tmp = nums[j];
- 		  nums[j] = nums[j-1];
- 		  nums[j-1] = tmp;
- 		  j--;
- 		}
- 	}
- 	// insertion sort done
- 	// take the middle value
- 	return nums[(SAMPLES-1)/2];
- }
 
 // int IR::fitCurve()
 // {
