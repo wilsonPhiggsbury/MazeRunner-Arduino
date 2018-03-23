@@ -125,28 +125,38 @@ bool executeInstruction(String instr, int instr_len)
   {
     return true;
   }
-  else if (instr == "CF0")
+  else if (instr == "CF111")
   {
-    calibration->doCalibrationSet(0, 'F');
+    calibration->doCalibrationSet(0, 'F', true, true, true);
   }
-  else if (instr == "CF1")
+  else if (instr == "CF101")
   {
-    calibration->doCalibrationSet(1, 'F');
+    calibration->doCalibrationSet(0, 'F', true, false, true);
+  }
+  else if (instr == "CF110")
+  {
+    delay(500);
+    calibration->doCalibrationSet(0, 'F', true, true, false);
+  }
+  else if (instr == "CF011")
+  {
+    delay(500);
+    calibration->doCalibrationSet(0, 'F', false, true, true);
   }
   else if (instr == "CS0")
   {
-    calibration->doCalibrationSet(0, 'S');
+    calibration->doCalibrationSet(0, 'S', false, false, false);
   }
   else if (instr == "CS1")
   {
-    calibration->doCalibrationSet(1, 'S');
+    calibration->doCalibrationSet(1, 'S', false, false, false);
   }
   else if (instr == "D")
   {
     DEBUGMODE = !DEBUGMODE;
     calibration->toggleDebug();
   }
-  else if (instr == "R")
+  else if (instr == "Q")
   {
     raw = !raw;
   }

@@ -12,14 +12,14 @@ const float RPM_CONVERSION = 120/(TPR*0.000001);
 
 // Distance params - change these values if distance travelled is inaccurate
 const int CPC_F[17] = {270, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600, 3900, 4125, 4425, 4775, 5075};
-const int CPC_B[17] = {265, 600, 900, 1200, 1500, 780};
+const int CPC_B[17] = {270, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600, 3900, 4125, 4425, 4775, 5075};
 // Orientation params - change these values if the bot is not runnning straight
-const float e1_offset = -0.62; // inc means make right motor slower
-const float e2_offset = 0; // inc means make left motor slower
+const float e1_offset = -0.7; // inc means make right motor slower
+const float e2_offset = 0.9; // inc means make left motor slower
 // Rotation params - change these values if the rotation is not 90 degrees
 const int CPR = 400; // Count Per Right angle
-const int ROTATE_OFFSET_RIGHT = -20; // inc means rotate right more
-const int ROTATE_OFFSET_LEFT = -5; // inc means rotate left more
+const int ROTATE_OFFSET_RIGHT = -23; // inc means rotate right more
+const int ROTATE_OFFSET_LEFT = -4; // inc means rotate left more
 
 //PID constant for E1
 const float k1_e1 = 0.04;

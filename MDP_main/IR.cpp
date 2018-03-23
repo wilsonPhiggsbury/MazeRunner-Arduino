@@ -33,15 +33,15 @@ int IR::lookUptable()
   switch(this->id)
   {
     case FL:
-    voltage = scaleByInterval(voltage,FL_offsets,FRONT_START,FRONT_END,FRONT_INTERVAL);
+    voltage = scaleByInterval(voltage,FL_offsets,FL_START,FL_END,FL_INTERVAL);
     break;
 
     case FM:
-    voltage = scaleByInterval(voltage,FM_offsets,FRONT_START,FRONT_END,FRONT_INTERVAL);
+    voltage = scaleByInterval(voltage,FM_offsets,FM_START,FM_END,FM_INTERVAL);
     break;
 
     case FR:
-	voltage = scaleByInterval(voltage,FR_offsets,FRONT_START,FRONT_END,FRONT_INTERVAL);
+	voltage = scaleByInterval(voltage,FR_offsets,FR_START,FR_END,FR_INTERVAL);
     break;
 
     case S_FL:
@@ -80,6 +80,7 @@ int IR::scaleByInterval(int voltageToScale, const int voltageSamples[], int star
     if(voltageToScale <= thisVal && voltageToScale >= nextVal)
     {
       voltageToScale = map(voltageToScale, thisVal, nextVal, i*interval+startDist, (i+1)*interval+startDist);
+//      Serial.println("i: "+String(i)+" End boundary: "+String((i+1)*interval+startDist));
       return voltageToScale;
     }
   }

@@ -11,7 +11,7 @@ class Calibration
 {
 	private:
 		int displacement_fixLater;
-    int8_t trustedSensorForDist;
+    int8_t trustedSensorForDist,sensor1,sensor2;
 		IR *IR_sensors[6];
 		Motor *motor;
     // main internal functions
@@ -20,12 +20,12 @@ class Calibration
     // subroutines & utilities
     void fixDisplacement(bool useTolerance);
     void updateReadings(bool wait);
-    bool sensorValid(int sensorID);
+    bool sensorValid(int sensorID, bool near);
     bool DEBUG;
 
 	public:
 		Calibration(IR *IR_sensors[6], Motor *motor, bool debug);
-    int doCalibrationSet(int distInTheory, char front_or_side);
+    int doCalibrationSet(int distInTheory, char front_or_side, bool s1, bool s2, bool s3);
     void toggleDebug();
 		void informTurn(bool right);
 };
