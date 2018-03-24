@@ -1,13 +1,5 @@
 #include "Calibration.h"
 
-// IR sensor indexes
-#define FM 0// front left
-#define FL 1// front mid
-#define FR 2// front right
-#define S_FL 3// left front (side)
-#define S_FR 4// right front(side)
-#define S_BR 5// right back (side)
-
 // IR sensor calibrate ROTATION trusted range, in mm
 #define ROTATION_RANGE_FLO -10
 #define ROTATION_RANGE_FHI 120

@@ -1,6 +1,7 @@
 // Voltage: 6.3
 
 #include "Calibration.h"
+#include "Utilities.h"
 
 #define LEFT 0
 #define RIGHT 1
@@ -24,7 +25,6 @@ bool raw = false;
 IR *IR_sensors[6];
 Motor *motor;
 Calibration *calibration;
-int i;
 
 String in_command = "";
 char lumpingInstr = 'n';
@@ -44,7 +44,7 @@ void setup() {
 void loop() {
   // take reading, send integers to algo
   String sendToAlgo = "";
-  int j;
+  int i,j;
   delay(150);
 
   for (i = 0; i < 6; i++)
@@ -72,30 +72,48 @@ void loop() {
 
   // read command, parse and execute
   while (!readCommand(&in_command)); // block until command comes in
-  int start = 0;
-  int end = 0;
+  i=0;
+  String sub_command = Utilities::getSubString(in_command, ',', i++);
+  while(sub_command != "")
+  {
+    String instr = Utilities::getSubString(sub_command, ' ', 0);
+    String parameter = Utilities::getSubString(sub_command, ' ', 1);
+    executeInstruction(instr, parameter);
+    sub_command = Utilities::getSubString(in_command, ',', i++);
+  }
   
   in_command = "";
 }
-bool executeInstruction(String instr, int instr_len)
+bool executeInstruction(String instr, String parameter)
 {
-  if (instr.charAt(0) == 'F')
+  int execCount = parameter.toInt();
+  if (instr == "F")
   {
-    motor->moveForward(DEFAULT_RPM, instr_len);
+    motor->moveForward(DEFAULT_RPM, execCount);
   }
-  else if (instr.charAt(0) == 'B')
+  else if (instr == "B")
   {
-    motor->moveBackward(DEFAULT_RPM, instr_len);
+    motor->moveBackward(DEFAULT_RPM, execCount);
   }
   else if (instr == "L")
   {
-    motor->rotateLeft(DEFAULT_RPM, 90);
-    calibration->informTurn(false);
+    while(execCount>0)
+    {
+      motor->rotateLeft(DEFAULT_RPM, 90);
+      calibration->informTurn(false);
+      execCount--;
+      if(execCount!=0)delay(250);
+    }
   }
   else if (instr == "R")
   {
-    motor->rotateRight(DEFAULT_RPM, 90);
-    calibration->informTurn(true);
+    while(execCount>0)
+    {
+      motor->rotateRight(DEFAULT_RPM, 90);
+      calibration->informTurn(true);
+      execCount--;
+      if(execCount!=0)delay(250);
+    }
   }
   else if (instr == "ES")
   {
@@ -109,31 +127,13 @@ bool executeInstruction(String instr, int instr_len)
   {
     return true;
   }
-  else if (instr == "CF111")
+  else if (instr == "CF")
   {
-    calibration->doCalibrationSet(0, 'F', true, true, true);
+    calibration->doCalibrationSet(0, 'F', execCount/100, (execCount%100)/10, (execCount%10));
   }
-  else if (instr == "CF101")
+  else if (instr == "CS")
   {
-    calibration->doCalibrationSet(0, 'F', true, false, true);
-  }
-  else if (instr == "CF110")
-  {
-    delay(500);
-    calibration->doCalibrationSet(0, 'F', true, true, false);
-  }
-  else if (instr == "CF011")
-  {
-    delay(500);
-    calibration->doCalibrationSet(0, 'F', false, true, true);
-  }
-  else if (instr == "CS0")
-  {
-    calibration->doCalibrationSet(0, 'S', false, false, false);
-  }
-  else if (instr == "CS1")
-  {
-    calibration->doCalibrationSet(1, 'S', false, false, false);
+    calibration->doCalibrationSet(execCount, 'S', false, false, false);
   }
   else if (instr == "D")
   {
