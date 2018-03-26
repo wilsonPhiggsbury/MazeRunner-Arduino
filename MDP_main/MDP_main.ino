@@ -151,6 +151,10 @@ bool executeInstruction(String instr, String parameter)
   {
     raw = !raw;
   }
+  else if (instr == "SF")
+  {
+    motor->setForwardCount(DEFAULT_RPM, execCount);
+  }
   else
     return false;
   return true;
