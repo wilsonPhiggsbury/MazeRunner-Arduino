@@ -73,11 +73,17 @@ void loop() {
   // read command, parse and execute
   while (!readCommand(&in_command)); // block until command comes in
   i=0;
+  j=0;
   String sub_command = Utilities::getSubString(in_command, ',', i++);
   while(sub_command != "")
   {
-    String instr = Utilities::getSubString(sub_command, ' ', 0);
-    String parameter = Utilities::getSubString(sub_command, ' ', 1);
+    String instr,parameter;
+    while(sub_command.charAt(j)!=' ')
+    {
+      instr += sub_command.charAt(j);
+      j++;
+    }
+    parameter = sub_command.substring(j+1,sub_command.length());
     executeInstruction(instr, parameter);
     sub_command = Utilities::getSubString(in_command, ',', i++);
   }
@@ -86,33 +92,34 @@ void loop() {
 }
 bool executeInstruction(String instr, String parameter)
 {
-  int execCount = parameter.toInt();
+  int param1 = parameter.toInt();
+  Serial.println(instr+" "+parameter);
   if (instr == "F")
   {
-    motor->moveForward(DEFAULT_RPM, execCount);
+    motor->moveForward(DEFAULT_RPM, param1);
   }
   else if (instr == "B")
   {
-    motor->moveBackward(DEFAULT_RPM, execCount);
+    motor->moveBackward(DEFAULT_RPM, param1);
   }
   else if (instr == "L")
   {
-    while(execCount>0)
+    while(param1>0)
     {
       motor->rotateLeft(DEFAULT_RPM, 90);
       calibration->informTurn(false);
-      execCount--;
-      if(execCount!=0)delay(250);
+      param1--;
+      if(param1!=0)delay(250);
     }
   }
   else if (instr == "R")
   {
-    while(execCount>0)
+    while(param1>0)
     {
       motor->rotateRight(DEFAULT_RPM, 90);
       calibration->informTurn(true);
-      execCount--;
-      if(execCount!=0)delay(250);
+      param1--;
+      if(param1!=0)delay(250);
     }
   }
   else if (instr == "ES")
@@ -129,11 +136,11 @@ bool executeInstruction(String instr, String parameter)
   }
   else if (instr == "CF")
   {
-    calibration->doCalibrationSet(0, 'F', execCount/100, (execCount%100)/10, (execCount%10));
+    calibration->doCalibrationSet(0, 'F', param1/100, (param1%100)/10, (param1%10));
   }
   else if (instr == "CS")
   {
-    calibration->doCalibrationSet(execCount, 'S', false, false, false);
+    calibration->doCalibrationSet(param1, 'S', false, false, false);
   }
   else if (instr == "D")
   {
