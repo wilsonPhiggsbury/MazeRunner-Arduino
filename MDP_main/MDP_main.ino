@@ -75,25 +75,21 @@ void loop() {
   i=0;
   j=0;
   String sub_command = Utilities::getSubString(in_command, ',', i++);
+
   while(sub_command != "")
   {
-    String instr,parameter;
-    while(sub_command.charAt(j)!=' ')
-    {
-      instr += sub_command.charAt(j);
-      j++;
-    }
-    parameter = sub_command.substring(j+1,sub_command.length());
-    executeInstruction(instr, parameter);
+    executeInstruction(sub_command);
     sub_command = Utilities::getSubString(in_command, ',', i++);
   }
   
   in_command = "";
 }
-bool executeInstruction(String instr, String parameter)
+bool executeInstruction(String sub_command)
 {
-  int param1 = parameter.toInt();
-  Serial.println(instr+" "+parameter);
+  String instr = Utilities::getSubString(sub_command, ' ', 0);
+  instr.trim();
+  int param1 = Utilities::getSubString(sub_command, ' ', 1).toInt();
+  int param2 = Utilities::getSubString(sub_command, ' ', 2).toInt();
   if (instr == "F")
   {
     motor->moveForward(DEFAULT_RPM, param1);
@@ -122,6 +118,14 @@ bool executeInstruction(String instr, String parameter)
       if(param1!=0)delay(250);
     }
   }
+  else if (instr == "CF")
+  {
+    calibration->doCalibrationSet(0, 'F', param1/100, (param1%100)/10, (param1%10));
+  }
+  else if (instr == "CS")
+  {
+    calibration->doCalibrationSet(param1, 'S', false, false, false);
+  }
   else if (instr == "ES")
   {
     exploring = true;
@@ -134,14 +138,6 @@ bool executeInstruction(String instr, String parameter)
   {
     return true;
   }
-  else if (instr == "CF")
-  {
-    calibration->doCalibrationSet(0, 'F', param1/100, (param1%100)/10, (param1%10));
-  }
-  else if (instr == "CS")
-  {
-    calibration->doCalibrationSet(param1, 'S', false, false, false);
-  }
   else if (instr == "D")
   {
     DEBUGMODE = !DEBUGMODE;
@@ -153,7 +149,43 @@ bool executeInstruction(String instr, String parameter)
   }
   else if (instr == "SF")
   {
-    motor->setForwardCount(DEFAULT_RPM, execCount);
+    motor->setForwardTick(param1, param2);
+  }
+  else if (instr == "SB")
+  {
+    motor->setBackwardTick(param1, param2);
+  }
+  else if (instr == "SL")
+  {
+    motor->setRotateLeftTick(param1);
+  }
+  else if (instr == "SR")
+  {
+    motor->setRotateRightTick(param1);
+  }
+  else if (instr == "SPIDL")
+  {
+    motor->setPIDLeftOffset(param1);
+  }
+  else if (instr == "SPIDR")
+  {
+    motor->setPIDRightOffset(param1);
+  }
+  else if (instr == "FT")
+  {
+    motor->moveForwardTick(DEFAULT_RPM, param1);
+  }
+  else if (instr == "BT")
+  {
+    motor->moveBackwardTick(DEFAULT_RPM, param1);
+  }
+  else if (instr == "LT")
+  {
+    
+  }
+  else if (instr == "GET")
+  {
+    motor->printInfo();
   }
   else
     return false;

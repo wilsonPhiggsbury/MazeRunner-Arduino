@@ -1,4 +1,5 @@
 #include "DualVNH5019MotorShield.h"
+#include <EEPROM.h>
 
 //Pins
 const int E1A = 3; //right
@@ -10,16 +11,16 @@ const int NUM_SAMPLES = 7;
 const int TPR = 2249; //Tick Per Rotation
 const float RPM_CONVERSION = 120/(TPR*0.000001);
 
-// Distance params - change these values if distance travelled is inaccurate
-const int CPC_F[17] = {270, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600, 3900, 4125, 4425, 4775, 5075};
-const int CPC_B[17] = {270, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600, 3900, 4125, 4425, 4775, 5075};
-// Orientation params - change these values if the bot is not runnning straight
-const float e1_offset = -0.7; // inc means make right motor slower
-const float e2_offset = 0.9; // inc means make left motor slower
-// Rotation params - change these values if the rotation is not 90 degrees
+//// Distance params - change these values if distance travelled is inaccurate
+//const int CPC_F[17] = {270, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600, 3900, 4125, 4425, 4775, 5075};
+//const int CPC_B[17] = {270, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600, 3900, 4125, 4425, 4775, 5075};
+//// Orientation params - change these values if the bot is not runnning straight
+//const float e1_offset = -0.7; // inc means make right motor slower
+//const float e2_offset = 0.9; // inc means make left motor slower
+//// Rotation params - change these values if the rotation is not 90 degrees
 const int CPR = 400; // Count Per Right angle
-const int ROTATE_OFFSET_RIGHT = -23; // inc means rotate right more
-const int ROTATE_OFFSET_LEFT = -4; // inc means rotate left more
+//const int ROTATE_OFFSET_RIGHT = -23; // inc means rotate right more
+//const int ROTATE_OFFSET_LEFT = -4; // inc means rotate left more
 
 //PID constant for E1
 const float k1_e1 = 0.04;
@@ -48,7 +49,12 @@ const char COMM_ROTATE_R = 'R';
 const char COMM_ROTATE_L = 'L';
 
 //EEPROM base address
-int FORWARD_COUNT = 0;
+const int FORWARD_TICK = 0;
+const int BACKWARD_TICK = FORWARD_TICK+sizeof(int)*18;
+const int ROTATE_RIGHT_OFFSET = BACKWARD_TICK+sizeof(int)*18;
+const int ROTATE_LEFT_OFFSET = ROTATE_RIGHT_OFFSET+sizeof(int);
+const int PID_RIGHT_OFFSET = ROTATE_LEFT_OFFSET+sizeof(int);
+const int PID_LEFT_OFFSET = PID_RIGHT_OFFSET+sizeof(int);
 
 class Motor
 {
@@ -67,7 +73,14 @@ class Motor
         float last_error_e2;
         float last_last_error_e1;
         float last_last_error_e2;
-        
+
+        int e1_offset;
+        int e2_offset;
+        int CPC_F[17];
+        int CPC_B[17];
+        int left_offset;
+        int right_offset;
+    
     public:
         bool isRunning;
         char motor_status;
@@ -75,14 +88,22 @@ class Motor
         int rpmToSpeed(float rpm, boolean isRight, boolean isForward);
         void adjustSpeed(bool isForward);
         void moveForward(float input_rpm, int cell_num);
+        void moveForwardTick(float input_rpm, int tick);
         void moveBackward(float input_rpm, int cell_num);
+        void moveBackwardTick(float input_rpm, int tick);
         void rotateRight(float input_rpm, float degree);
         void rotateLeft(float input_rpm, float degree);
         void stopBot();
         float getRpm(int readings[]);
         int getRotateTime(float rpm, float degree, bool isRight);
         void resetError();
-        void setForwardCount(int num_cells, int count)
+        void setForwardTick(int num_cells, int tick);
+        void setBackwardTick(int num_cells, int tick);
+        void setRotateRightTick(int tick);
+        void setRotateLeftTick(int tick);
+        void setPIDRightOffset(int offset);
+        void setPIDLeftOffset(int offset);
+        void printInfo();
 };
 
 volatile static uint8_t tick_MSB = 0;
