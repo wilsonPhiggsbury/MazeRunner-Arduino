@@ -47,6 +47,9 @@ const char COMM_BACKWARD = 'B';
 const char COMM_ROTATE_R = 'R';
 const char COMM_ROTATE_L = 'L';
 
+//EEPROM base address
+int FORWARD_COUNT = 0;
+
 class Motor
 {
     private:
@@ -79,6 +82,7 @@ class Motor
         float getRpm(int readings[]);
         int getRotateTime(float rpm, float degree, bool isRight);
         void resetError();
+        void setForwardCount(int num_cells, int count)
 };
 
 volatile static uint8_t tick_MSB = 0;

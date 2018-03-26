@@ -33,9 +33,13 @@ void Motor::moveForward(float input_rpm, int cell_num)
   this->desired_rpm = input_rpm;
   this->input_rpm_e1 = input_rpm;
   this->input_rpm_e2 = input_rpm;
+
+  int count = 0;
+  int offset = sizeof(count)*(cell_num-1);
+  EEPROM.put(FORWARD_COUNT+offset, count);
   
-  uint8_t CPC_MSB = (CPC_F[cell_num-1]>>8) & 0xFF;
-  uint8_t CPC_LSB = (CPC_F[cell_num-1]) & 0x00FF;
+  uint8_t CPC_MSB = (count>>8) & 0xFF;
+  uint8_t CPC_LSB = (count) & 0x00FF;
   md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, true), rpmToSpeed(this->input_rpm_e1, true, true));
   tick_LSB = tick_MSB = 0;
   if(cell_num > 0) {
@@ -200,6 +204,12 @@ void Motor::resetError()
   this->error_e2 = 0;
 }
 
+void Motor::setForwardCount(int num_cells, int count)
+{
+  int offset = sizeof(count)*(num_cells-1);
+  EEPROM.put(FORWARD_COUNT+offset, count);
+}
+
 void incrementTick() {
   if(tick_LSB == 255)
   {
@@ -211,4 +221,3 @@ void incrementTick() {
     tick_LSB++;
   }
 }
-
