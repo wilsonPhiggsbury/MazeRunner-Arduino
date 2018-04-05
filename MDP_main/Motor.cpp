@@ -211,7 +211,6 @@ void Motor::adjustSpeed(bool isForward)
 
     float e1_reading = ((e1a_reading + e1b_reading) / 2.0) + e1_offset / 100.0;
     float e2_reading = ((e2a_reading + e2b_reading) / 2.0) + e2_offset / 100.0;
-
     //Serial.println(String(e1_reading) + "    " + String(e2_reading));
 
     this->last_last_error_e1 = this->last_error_e1;

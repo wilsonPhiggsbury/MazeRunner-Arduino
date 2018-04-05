@@ -4,7 +4,7 @@
 #include "WProgram.h"
 #endif
 
-#define SAMPLES 41
+#define SAMPLES 61
 // IR sensor indexes
 #define FL 1// front left
 #define FM 0// front mid

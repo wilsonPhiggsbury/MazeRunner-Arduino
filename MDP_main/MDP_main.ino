@@ -76,10 +76,12 @@ void loop() {
   j=0;
   String sub_command = Utilities::getSubString(in_command, ',', i++);
 
-  while(sub_command != "")
+  while(true)
   {
     executeInstruction(sub_command);
     sub_command = Utilities::getSubString(in_command, ',', i++);
+    if(sub_command!="")delay(200); // do not wait if breaking out imminent
+    else break;
   }
   
   in_command = "";

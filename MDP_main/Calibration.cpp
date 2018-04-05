@@ -43,10 +43,12 @@ Calibration::Calibration(IR *IR_sensors[6], Motor *motor, bool debug)
 }
 int Calibration::doCalibrationSet(char front_or_side, int s1, int s2, int s3)
 {
+  updateReadings(WAIT);
   sensorOffsets[FL] = sensorOffsets[S_FR] = s1*100;
   sensorOffsets[FM] = s2*100;
   sensorOffsets[FR] = sensorOffsets[S_BR] = s3*100;
   const int invalid = 9;
+  bool evenTerrian = true;
   // sensor choice
   if(front_or_side == 'F')
   {
@@ -56,18 +58,21 @@ int Calibration::doCalibrationSet(char front_or_side, int s1, int s2, int s3)
       sensor2 = FR;
       if(s2!=invalid)trustedSensorForDist = FM;
       else trustedSensorForDist = FL;
+      evenTerrian = s1==s3;
     }
     else if(s1!=invalid && s2!=invalid) // 009
     {
       sensor1 = FL;
       sensor2 = FM;
       trustedSensorForDist = FL;
+      evenTerrian = s1==s2;
     }
     else if(s2!=invalid && s3!=invalid)// 900
     {
       sensor1 = FM;
       sensor2 = FR;
-      trustedSensorForDist = FR;
+      trustedSensorForDist = FM;
+      evenTerrian = s2==s3;
     }
     else // 990 or 909 or 099
     {
@@ -76,14 +81,18 @@ int Calibration::doCalibrationSet(char front_or_side, int s1, int s2, int s3)
       else if(s2!=invalid) trustedSensorForDist = FM;
       else if(s3!=invalid)trustedSensorForDist = FR;
       else trustedSensorForDist = -1;
+      evenTerrian = false;
     }
   }
   else if(front_or_side == 'S')
   {
-    sensor1 = (s1!=invalid)?S_FR:-1;
-    sensor2 = (s3!=invalid)?S_BR:-1;
+    sensor1 = S_FR;
+    sensor2 = S_BR;
     if(s2!=invalid)trustedSensorForDist = FM;
     else trustedSensorForDist = FL;
+
+    if(s1!=invalid)evenTerrian = s1==s3;
+    else evenTerrian = false;
   }
   else
   {
@@ -109,7 +118,7 @@ int Calibration::doCalibrationSet(char front_or_side, int s1, int s2, int s3)
   do
   {
     // check rotation
-    if(sensor1!=-1 && sensor2!=-1)hasCalibratedRotation = calibrateRotation(front_or_side);
+    if(evenTerrian)hasCalibratedRotation = calibrateRotation(front_or_side);
     // check displacement
     if(trustedSensorForDist != -1)hasCalibratedDisplacement = calibrateDisplacement(front_or_side);
     limit++;
@@ -270,7 +279,7 @@ void Calibration::updateReadings(bool wait)
 bool Calibration::sensorValid(int sensorID, int8_t closeOrFar)
 {
   bool notTooClose = IR_sensors[sensorID]->reading != -900;
-  bool notTooFar = IR_sensors[sensorID]->reading != 900;
+  bool notTooFar = IR_sensors[sensorID]->reading <= 200;
   if(closeOrFar == -1)return notTooClose; // if not too close then valid
   else if(closeOrFar == 1) return notTooFar;// if not too far then valid
   else return notTooClose && notTooFar; // only valid if not too close nor too far
