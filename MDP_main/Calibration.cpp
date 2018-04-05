@@ -15,7 +15,7 @@
 #define DISPLACEMENT_RANGE_SIDE 150
 // tolerance in mm
 #define DISPLACEMENT_ROUGH_TOLERANCE 30//20//(5~20)
-#define DISPLACEMENT_FINE_TOLERANCE 15//8
+#define DISPLACEMENT_FINE_TOLERANCE 10//8
 
 /*
  * tweak up if jittering occurs (hardware cannot support such fine tuning)
