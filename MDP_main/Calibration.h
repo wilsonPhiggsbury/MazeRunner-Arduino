@@ -7,25 +7,33 @@
 #include "IR.h"
 #include "Motor.h"
 #include <math.h>
+const int8_t TOO_CLOSE = -1;
+const int8_t CLOSE_AND_FAR = 0;
+const int8_t TOO_FAR = 1;
+const bool IMMEDIATE = false;
+const bool WAIT = true;
+
 class Calibration
 {
 	private:
 		int displacement_fixLater;
+    int sensorOffsets[6];
     int8_t trustedSensorForDist,sensor1,sensor2;
 		IR *IR_sensors[6];
 		Motor *motor;
     // main internal functions
     bool calibrateRotation(char front_or_side);
-    bool calibrateDisplacement(int distToObstacle, char front_or_side);
+    bool calibrateDisplacement(char front_or_side);
     // subroutines & utilities
     void fixDisplacement(bool useTolerance);
     void updateReadings(bool wait);
-    bool sensorValid(int sensorID, bool near);
+    int getReadings(int sensorIndex);
+    bool sensorValid(int sensorID, int8_t closeOrFar);
     bool DEBUG;
 
 	public:
 		Calibration(IR *IR_sensors[6], Motor *motor, bool debug);
-    int doCalibrationSet(int distInTheory, char front_or_side, bool s1, bool s2, bool s3);
+    int doCalibrationSet(char front_or_side, int s1, int s2, int s3);
     void toggleDebug();
 		void informTurn(bool right);
 };

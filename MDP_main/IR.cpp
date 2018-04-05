@@ -41,7 +41,7 @@ int IR::lookUptable()
     break;
 
     case FR:
-	voltage = scaleByInterval(voltage,FR_offsets,FR_START,FR_END,FR_INTERVAL);
+	  voltage = scaleByInterval(voltage,FR_offsets,FR_START,FR_END,FR_INTERVAL);
     break;
 
     case S_FL:

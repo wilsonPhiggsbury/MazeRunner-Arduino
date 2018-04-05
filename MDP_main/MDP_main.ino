@@ -120,11 +120,11 @@ bool executeInstruction(String sub_command)
   }
   else if (instr == "CF")
   {
-    calibration->doCalibrationSet(0, 'F', param1/100, (param1%100)/10, (param1%10));
+    calibration->doCalibrationSet('F', param1/100, (param1%100)/10, param1%10);
   }
   else if (instr == "CS")
   {
-    calibration->doCalibrationSet(param1, 'S', false, false, false);
+    calibration->doCalibrationSet('S', param1/100, (param1%100)/10, param1%10);
   }
   else if (instr == "ES")
   {

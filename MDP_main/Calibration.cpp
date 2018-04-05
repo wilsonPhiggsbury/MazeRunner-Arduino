@@ -26,9 +26,6 @@
 #define FRONT_SENSOR_WIDTH 168
 #define SIDE_SENSOR_WIDTH 194
 
-#define TURNDEG_SCALEDOWN 0.9 //to prevent coarse rotation from overshooting
-#define TURNDISPL_SCALEDOWN 0.9 //to prevent coarse displacement from overshooting
-
 const short DEFAULT_RPM = 105;
 const short SLOW_RPM = 20;
 
@@ -42,37 +39,51 @@ Calibration::Calibration(IR *IR_sensors[6], Motor *motor, bool debug)
 	}
 	this->motor = motor;
 	this->DEBUG = debug;
+  sensor1 = sensor2 = -1;
 }
-int Calibration::doCalibrationSet(int distInTheory, char front_or_side, bool s1, bool s2, bool s3)
+int Calibration::doCalibrationSet(char front_or_side, int s1, int s2, int s3)
 {
+  sensorOffsets[FL] = sensorOffsets[S_FR] = s1*100;
+  sensorOffsets[FM] = s2*100;
+  sensorOffsets[FR] = sensorOffsets[S_BR] = s3*100;
+  const int invalid = 9;
   // sensor choice
   if(front_or_side == 'F')
   {
-    if(s1 && s3)
+    if(s1!=invalid && s3!=invalid) // 000 or 090
     {
       sensor1 = FL;
       sensor2 = FR;
-      if(s2)trustedSensorForDist = FM;
+      if(s2!=invalid)trustedSensorForDist = FM;
       else trustedSensorForDist = FL;
     }
-    else if(s1 && s2)
+    else if(s1!=invalid && s2!=invalid) // 009
     {
       sensor1 = FL;
       sensor2 = FM;
       trustedSensorForDist = FL;
     }
-    else if(s2 && s3)
+    else if(s2!=invalid && s3!=invalid)// 900
     {
       sensor1 = FM;
       sensor2 = FR;
       trustedSensorForDist = FR;
     }
+    else // 990 or 909 or 099
+    {
+      sensor1 = sensor2 = -1;
+      if(s1!=invalid) trustedSensorForDist = FL;
+      else if(s2!=invalid) trustedSensorForDist = FM;
+      else if(s3!=invalid)trustedSensorForDist = FR;
+      else trustedSensorForDist = -1;
+    }
   }
   else if(front_or_side == 'S')
   {
-    sensor1 = S_FR;
-    sensor2 = S_BR;
-    trustedSensorForDist = FL;
+    sensor1 = (s1!=invalid)?S_FR:-1;
+    sensor2 = (s3!=invalid)?S_BR:-1;
+    if(s2!=invalid)trustedSensorForDist = FM;
+    else trustedSensorForDist = FL;
   }
   else
   {
@@ -82,26 +93,25 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side, bool s1,
   bool hasCalibratedDisplacement = false;
   uint8_t limit = 0;
   // guard condition: back up if too close
-  if(!sensorValid(FL,true) || !sensorValid(FM,true) || !sensorValid(FR,true))
+  if(!sensorValid(FL,TOO_CLOSE) || !sensorValid(FM,TOO_CLOSE) || !sensorValid(FR,TOO_CLOSE))// how to read: sensor FL not valid because TOO_CLOSE
   {
     motor->moveBackward(20,0);
     do{
-      updateReadings(false);
-    }while(!sensorValid(FL,true) || !sensorValid(FM,true) || !sensorValid(FR,true));
+      updateReadings(IMMEDIATE);
+    }while(!sensorValid(FL,TOO_CLOSE) || !sensorValid(FM,TOO_CLOSE) || !sensorValid(FR,TOO_CLOSE));
     delay(250);// continue moving backwards for a while even after sensor goes valid
     motor->stopBot();
-    updateReadings(true);
+    updateReadings(WAIT);
   }
   // guard condition: abort if one of the sensors invalid
-  if(front_or_side=='F' && (!sensorValid(sensor1,false) || !sensorValid(sensor2,false)))return -1;
+  if(front_or_side=='F' && (!sensorValid(sensor1,CLOSE_AND_FAR) || !sensorValid(sensor2,CLOSE_AND_FAR)))return -1;
   // main routine: do rotation and displacement calibration until no need anymore (or exceeds limit)
   do
   {
-    // check rotation, fine or coarse subroutine?
-    hasCalibratedRotation = calibrateRotation(front_or_side);
-    
-    // check displacement, fine or corase subroutine?
-    if(trustedSensorForDist != -1)hasCalibratedDisplacement = calibrateDisplacement(distInTheory*100, front_or_side);
+    // check rotation
+    if(sensor1!=-1 && sensor2!=-1)hasCalibratedRotation = calibrateRotation(front_or_side);
+    // check displacement
+    if(trustedSensorForDist != -1)hasCalibratedDisplacement = calibrateDisplacement(front_or_side);
     limit++;
   }while((hasCalibratedRotation || hasCalibratedDisplacement) && limit<3);
 	
@@ -109,7 +119,7 @@ int Calibration::doCalibrationSet(int distInTheory, char front_or_side, bool s1,
 }
 void Calibration::informTurn(bool right)
 {
-	//delay(250);
+//  delay(250);
 //	if(displacement_fixLater != 0)
 //	{
 //		if(right){
@@ -128,41 +138,25 @@ void Calibration::toggleDebug()
 // private ---------------------------------------------------------------
 bool Calibration::calibrateRotation(char front_or_side)
 {
-	updateReadings(true);
+	updateReadings(WAIT);
 	int sensorwidth,diff,diff2,tolerance;
 	float turnDegree, toleranceScale;
 	String lr_command;
 	if(front_or_side == 'F')
 	{
-  //if(DEBUG)Serial.println("ROT Front");
     tolerance = ROTATION_FINE_TOLERANCE_FRONT;
 		toleranceScale = 1;
 	}
 	else if(front_or_side == 'S')
 	{
-  //if(DEBUG)Serial.println("Rot Side");
     tolerance = ROTATION_FINE_TOLERANCE_SIDE;
 		sensor1 = S_FR;
 		sensor2 = S_BR;
 		sensorwidth = SIDE_SENSOR_WIDTH;
 		toleranceScale = 1;
 	}
-	// diff = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
-	// _________________________________________ do rough calibration
-	// if(abs(diff) > ROTATION_ROUGH_TOLERANCE*toleranceScale)
-	// {
-	// 	turnDegree = atan2(abs(diff),sensorwidth) / PI * 180 * TURNDEG_SCALEDOWN;
-	// 	//if(DEBUG)Serial.println(String(turnDegree)+lr_command + DEFAULT_RPM + String(turnDegree,0));
-	// 	if(diff > 0){
-	// 		motor->rotateRight(DEFAULT_RPM, turnDegree);
-	// 	}
-	// 	else {
-	// 		motor->rotateLeft(DEFAULT_RPM, turnDegree);
-	// 	}
-	// }
-	// delay(200);
 	// _________________________________________ do fine calibration
-	diff = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
+	diff = getReadings(sensor1) - getReadings(sensor2);
 	bool isRight = diff > 0;
 	if(abs(diff) > tolerance*toleranceScale)
 	{
@@ -170,8 +164,8 @@ bool Calibration::calibrateRotation(char front_or_side)
 		if(diff > 0) {
       motor->rotateLeft(SLOW_RPM, 0);
       do{
-        updateReadings(false);
-        diff2 = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
+        updateReadings(IMMEDIATE);
+        diff2 = getReadings(sensor1) - getReadings(sensor2);
       }while(diff2 <= diff);
       motor->stopBot();
 			motor->rotateRight(SLOW_RPM, 0);
@@ -179,16 +173,16 @@ bool Calibration::calibrateRotation(char front_or_side)
 		else {
       motor->rotateRight(SLOW_RPM, 0);
       do{
-        updateReadings(false);
-        diff2 = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
+        updateReadings(IMMEDIATE);
+        diff2 = getReadings(sensor1) - getReadings(sensor2);
       }while(diff2 >= diff);
       motor->stopBot();
 			motor->rotateLeft(SLOW_RPM, 0);
 		}
     do
     {
-      updateReadings(false);
-      diff = IR_sensors[sensor1]->reading - IR_sensors[sensor2]->reading;
+      updateReadings(IMMEDIATE);
+      diff = getReadings(sensor1) - getReadings(sensor2);
     }while(abs(diff) > tolerance && (isRight == (diff>0)));
     if(DEBUG && (isRight != (diff>0)))Serial.println("Rot overshoot");
     motor->stopBot();
@@ -199,11 +193,11 @@ bool Calibration::calibrateRotation(char front_or_side)
 
 }
 
-bool Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
+bool Calibration::calibrateDisplacement(char front_or_side)
 {	
 	// update readings, usually executed after rotated back to spot
   delay(200);
-	updateReadings(true);
+	updateReadings(WAIT);
 	int diff;
   int tolerance_far = DISPLACEMENT_FINE_TOLERANCE;
   int tolerance_near = -DISPLACEMENT_FINE_TOLERANCE;
@@ -211,7 +205,7 @@ bool Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
 	if(front_or_side == 'F')
 	{
     bool isMovingFront;
-		diff = -distToObstacle + IR_sensors[trustedSensorForDist]->reading;
+		diff = getReadings(trustedSensorForDist);
 		toleranceScale = 1;
 		
 		// _________________________________________ do fine calibration
@@ -226,8 +220,8 @@ bool Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
 			}
       do
       {
-        updateReadings(false);
-        diff = -distToObstacle + IR_sensors[trustedSensorForDist]->reading;
+        updateReadings(IMMEDIATE);
+        diff = getReadings(trustedSensorForDist);
         motor->adjustSpeed(diff>0);
       }while((diff > tolerance_far+15 || diff < tolerance_near) && (isMovingFront == (diff>0))); // +15 to make robot stop earlier, else always overshoots
       if(DEBUG && (isMovingFront != (diff>0)))Serial.println("Displ overshoot");
@@ -241,14 +235,17 @@ bool Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
 	else if(front_or_side == 'S')
 	{//if(DEBUG)Serial.println("DISPL Side");
 		toleranceScale = 1;
+		if(sensor1 != -1 && sensor2 != -1)displacement_fixLater = (getReadings(sensor1) + getReadings(sensor2))/2;
+    else if(sensor1 != -1)displacement_fixLater = getReadings(sensor1);
+    else if(sensor2 != -1)displacement_fixLater = getReadings(sensor2);
+    else return false;
 		
-		displacement_fixLater = -distToObstacle + (IR_sensors[S_FR]->reading + IR_sensors[S_BR]->reading)/2;
 		if(displacement_fixLater > tolerance_far || displacement_fixLater < tolerance_near-5) // -5 to allow nearer, prevent turning and realizing no need to back off
 		{
 			motor->rotateRight(105, 90);
       sensor1 = FL;
       sensor2 = FR;
-			calibrateDisplacement(distToObstacle, 'F');
+			calibrateDisplacement('F');
       sensor1 = S_FR;
       sensor2 = S_BR;
 			delay(200);
@@ -261,18 +258,25 @@ bool Calibration::calibrateDisplacement(int distToObstacle, char front_or_side)
     }
 	}
 }
-
+// utilities
 void Calibration::updateReadings(bool wait)
 {
 	if(wait)delay(200);
 	for(int i=0; i<6; i++)
 	{
-	IR_sensors[i]->takeReading(true);
+	  IR_sensors[i]->takeReading(true);
 	}
 }
-bool Calibration::sensorValid(int sensorID, bool near)
+bool Calibration::sensorValid(int sensorID, int8_t closeOrFar)
 {
-  if(!near)return !(IR_sensors[sensorID]->reading == 900 || IR_sensors[sensorID]->reading == -900);
-  else return !(IR_sensors[sensorID]->reading == -900);
+  bool notTooClose = IR_sensors[sensorID]->reading != -900;
+  bool notTooFar = IR_sensors[sensorID]->reading != 900;
+  if(closeOrFar == -1)return notTooClose; // if not too close then valid
+  else if(closeOrFar == 1) return notTooFar;// if not too far then valid
+  else return notTooClose && notTooFar; // only valid if not too close nor too far
+}
+int Calibration::getReadings(int sensorIndex)
+{
+  return IR_sensors[sensorIndex]->reading - sensorOffsets[sensorIndex];
 }
 
