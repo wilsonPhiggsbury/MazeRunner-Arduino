@@ -38,7 +38,7 @@ void setup() {
     IR_sensors[i] = new IR(i);
   }
   calibration = new Calibration(IR_sensors, motor, DEBUGMODE);
-  delay(500);
+  delay(100); // AQEDIT: from 500 to 100 for safety reasons
 }
 
 void loop() {
@@ -80,7 +80,7 @@ void loop() {
   {
     executeInstruction(sub_command);
     sub_command = Utilities::getSubString(in_command, ',', i++);
-    if(sub_command!="")delay(200); // do not wait if breaking out imminent
+    if(sub_command!="")delay(0); // do not wait if breaking out imminent // AQEDIT: shift delay to motor
     else break;
   }
   
@@ -107,7 +107,7 @@ bool executeInstruction(String sub_command)
       motor->rotateLeft(DEFAULT_RPM, 90);
       calibration->informTurn(false);
       param1--;
-      if(param1!=0)delay(250);
+      //if(param1!=0)delay(250); // AQEDIT: shift delay to motor
     }
   }
   else if (instr == "R")
@@ -117,7 +117,7 @@ bool executeInstruction(String sub_command)
       motor->rotateRight(DEFAULT_RPM, 90);
       calibration->informTurn(true);
       param1--;
-      if(param1!=0)delay(250);
+      //if(param1!=0)delay(250); // AQEDIT: shift delay to motor
     }
   }
   else if (instr == "CF")
