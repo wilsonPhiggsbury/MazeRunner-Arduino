@@ -62,7 +62,7 @@ void Motor::moveForward(float input_rpm, int cell_num)
     md.setBrakes(400, 400);
     this->resetError();
   }
-
+  delay(200); // AQEDIT: delay after motor movement
 
 }
 
@@ -107,6 +107,7 @@ void Motor::moveBackward(float input_rpm, int cell_num)
     md.setBrakes(400, 400);
     this->resetError();
   }
+  delay(200); // AQEDIT: delay after motor movement
 
 }
 
@@ -142,6 +143,7 @@ void Motor::rotateRight(float input_rpm, float degree)
     }
     md.setBrakes(400, 400);
   }
+  delay(200); // AQEDIT: delay after motor movement
 }
 
 void Motor::rotateLeft(float input_rpm, float degree)
@@ -158,6 +160,7 @@ void Motor::rotateLeft(float input_rpm, float degree)
     }
     md.setBrakes(400, 400);
   }
+  delay(200); // AQEDIT: delay after motor movement
 }
 
 void Motor::stopBot()
