@@ -45,7 +45,7 @@ void loop() {
   // take reading, send integers to algo
   String sendToAlgo = "";
   int i,j;
-  delay(150);
+  //delay(150); // AQEDIT: shift all delay to after motor stopbot
 
   for (i = 0; i < 6; i++)
   {
