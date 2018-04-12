@@ -173,17 +173,9 @@ bool executeInstruction(String sub_command)
   {
     motor->setPIDRightOffset(param1);
   }
-  else if (instr == "FT")
+  else if (instr == "SSS")// for set start speed
   {
-    motor->moveForwardTick(DEFAULT_RPM, param1);
-  }
-  else if (instr == "BT")
-  {
-    motor->moveBackwardTick(DEFAULT_RPM, param1);
-  }
-  else if (instr == "LT")
-  {
-    
+    motor->setStartSpeedDiff(param1);
   }
   else if (instr == "GET")
   {

@@ -35,7 +35,7 @@ Motor::Motor()
   EEPROM.get(ROTATE_LEFT_OFFSET, left_offset);
   EEPROM.get(PID_RIGHT_OFFSET, e1_offset);
   EEPROM.get(PID_LEFT_OFFSET, e2_offset);
-
+  EEPROM.get(STARTSPEED_DIFF, startspeed_diff);
 }
 
 void Motor::moveForward(float input_rpm, int cell_num)
@@ -46,14 +46,14 @@ void Motor::moveForward(float input_rpm, int cell_num)
   this->input_rpm_e2 = input_rpm;
   if (cell_num <= 0)
   {
-    md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, true), rpmToSpeed(this->input_rpm_e1, true, true));
+    md.setSpeeds((this->input_rpm_e2 - F_E2C) / F_E2M, (this->input_rpm_e1 - F_E1C) / F_E1M);
   }
   else
   {
     int tick = CPC_F[cell_num - 1];
     uint8_t CPC_MSB = (tick >> 8) & 0xFF;
     uint8_t CPC_LSB = (tick) & 0x00FF;
-    md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, true), rpmToSpeed(this->input_rpm_e1, true, true));
+    md.setSpeeds((this->input_rpm_e2 - F_E2C) / F_E2M, (this->input_rpm_e1 - F_E1C + startspeed_diff/100) / F_E1M);
     tick_LSB = tick_MSB = 0;
 
     while (tick_MSB < CPC_MSB || tick_LSB < CPC_LSB) {
@@ -66,24 +66,6 @@ void Motor::moveForward(float input_rpm, int cell_num)
 
 }
 
-void Motor::moveForwardTick(float input_rpm, int tick)
-{
-  this->motor_status = COMM_FORWARD;
-  this->desired_rpm = input_rpm;
-  this->input_rpm_e1 = input_rpm;
-  this->input_rpm_e2 = input_rpm;
-
-  uint8_t CPC_MSB = (tick >> 8) & 0xFF;
-  uint8_t CPC_LSB = (tick) & 0x00FF;
-  md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, true), rpmToSpeed(this->input_rpm_e1, true, true));
-  tick_LSB = tick_MSB = 0;
-  while (tick_MSB < CPC_MSB || tick_LSB < CPC_LSB) {
-    this->adjustSpeed(true);
-  }
-  md.setBrakes(400, 400);
-  this->resetError();
-}
-
 void Motor::moveBackward(float input_rpm, int cell_num)
 {
   this->motor_status = COMM_BACKWARD;
@@ -92,15 +74,14 @@ void Motor::moveBackward(float input_rpm, int cell_num)
   this->input_rpm_e2 = input_rpm;
   if (cell_num <= 0)
   {
-    md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, false), rpmToSpeed(this->input_rpm_e1, true, false));
+    md.setSpeeds((this->input_rpm_e2 - B_E2C) / B_E2M, (this->input_rpm_e1 - B_E1C) / B_E1M);
   }
   else
   {
     int tick = CPC_B[cell_num - 1];
     uint8_t CPC_MSB = (tick >> 8) & 0xFF;
     uint8_t CPC_LSB = (tick) & 0x00FF;
-    md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, false), rpmToSpeed(this->input_rpm_e1, true, false));
-    tick_LSB = tick_MSB = 0;
+    md.setSpeeds((this->input_rpm_e2 - B_E2C) / B_E2M, (this->input_rpm_e1 - B_E1C) / B_E1M);    tick_LSB = tick_MSB = 0;
     while (tick_MSB < CPC_MSB || tick_LSB < CPC_LSB) {
       this->adjustSpeed(false);
     }
@@ -109,24 +90,6 @@ void Motor::moveBackward(float input_rpm, int cell_num)
     delay(200); // AQEDIT: delay after motor movement
   }
 
-}
-
-void Motor::moveBackwardTick(float input_rpm, int tick)
-{
-  this->motor_status = COMM_FORWARD;
-  this->desired_rpm = input_rpm;
-  this->input_rpm_e1 = input_rpm;
-  this->input_rpm_e2 = input_rpm;
-
-  uint8_t CPC_MSB = (tick >> 8) & 0xFF;
-  uint8_t CPC_LSB = (tick) & 0x00FF;
-  md.setSpeeds(rpmToSpeed(this->input_rpm_e2, false, false), rpmToSpeed(this->input_rpm_e1, true, false));
-  tick_LSB = tick_MSB = 0;
-  while (tick_MSB < CPC_MSB || tick_LSB < CPC_LSB) {
-    this->adjustSpeed(false);
-  }
-  md.setBrakes(400, 400);
-  this->resetError();
 }
 
 void Motor::rotateRight(float input_rpm, float degree)
@@ -306,6 +269,12 @@ void Motor::setPIDLeftOffset(int offset)
   e2_offset += offset;
   EEPROM.put(PID_LEFT_OFFSET, e2_offset);
   Serial.println("PID Left offset set to "+String(e2_offset)+".");
+}
+void Motor::setStartSpeedDiff(int offset)
+{
+  startspeed_diff += offset;
+  EEPROM.put(STARTSPEED_DIFF, startspeed_diff);
+  Serial.println("Start speed of right wheel is now "+String(startspeed_diff)+" more than left wheel.");
 }
 
 void Motor::printInfo()
