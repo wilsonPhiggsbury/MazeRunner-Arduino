@@ -26,7 +26,7 @@ class Calibration
     bool calibrateDisplacement(char front_or_side);
     // subroutines & utilities
     void fixDisplacement(bool useTolerance);
-    void updateReadings(bool wait);
+    void updateReadings(bool wait, bool front, bool side);
     int getReadings(int sensorIndex);
     bool sensorValid(int sensorID, int8_t closeOrFar);
     bool DEBUG;

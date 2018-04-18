@@ -43,7 +43,7 @@ Calibration::Calibration(IR *IR_sensors[6], Motor *motor, bool debug)
 }
 int Calibration::doCalibrationSet(char front_or_side, int s1, int s2, int s3)
 {
-  updateReadings(WAIT);
+  updateReadings(IMMEDIATE,true,true); // AQEDIT
   sensorOffsets[FL] = sensorOffsets[S_FR] = s1*100;
   sensorOffsets[FM] = s2*100;
   sensorOffsets[FR] = sensorOffsets[S_BR] = s3*100;
@@ -106,11 +106,11 @@ int Calibration::doCalibrationSet(char front_or_side, int s1, int s2, int s3)
   {
     motor->moveBackward(20,0);
     do{
-      updateReadings(IMMEDIATE);
+      updateReadings(IMMEDIATE,true,false);
     }while(!sensorValid(FL,TOO_CLOSE) || !sensorValid(FM,TOO_CLOSE) || !sensorValid(FR,TOO_CLOSE));
-    delay(250);// continue moving backwards for a while even after sensor goes valid
+    delay(100);// continue moving backwards for a while even after sensor goes valid // AQEDIT
     motor->stopBot();
-    updateReadings(WAIT);
+    updateReadings(WAIT,true,true); // AQEDIT
   }
   // guard condition: abort if one of the sensors invalid
   if(front_or_side=='F' && (!sensorValid(sensor1,CLOSE_AND_FAR) || !sensorValid(sensor2,CLOSE_AND_FAR)))return -1;
@@ -121,8 +121,9 @@ int Calibration::doCalibrationSet(char front_or_side, int s1, int s2, int s3)
     if(evenTerrian)hasCalibratedRotation = calibrateRotation(front_or_side);
     // check displacement
     if(trustedSensorForDist != -1)hasCalibratedDisplacement = calibrateDisplacement(front_or_side);
+    delay(100);
     limit++;
-  }while((hasCalibratedRotation || hasCalibratedDisplacement) && limit<3);
+  }while((hasCalibratedRotation || hasCalibratedDisplacement) && limit<2); // AQEDIT
 	
 	return 1;
 }
@@ -147,7 +148,7 @@ void Calibration::toggleDebug()
 // private ---------------------------------------------------------------
 bool Calibration::calibrateRotation(char front_or_side)
 {
-	updateReadings(WAIT);
+	updateReadings(IMMEDIATE,true,true); // AQEDIT
 	int sensorwidth,diff,diff2,tolerance;
 	float turnDegree, toleranceScale;
 	String lr_command;
@@ -171,26 +172,26 @@ bool Calibration::calibrateRotation(char front_or_side)
 	{
 		//if(DEBUG)Serial.println(lr_command + SLOW_RPM);
 		if(diff > 0) {
-      motor->rotateLeft(SLOW_RPM, 0);
+     /* motor->rotateLeft(SLOW_RPM, 0); // AQ: is it turning in diff direction first? Why is this necessary?
       do{
         updateReadings(IMMEDIATE);
         diff2 = getReadings(sensor1) - getReadings(sensor2);
       }while(diff2 <= diff);
-      motor->stopBot();
+      motor->stopBot();*/
 			motor->rotateRight(SLOW_RPM, 0);
 		}
 		else {
-      motor->rotateRight(SLOW_RPM, 0);
+     /* motor->rotateRight(SLOW_RPM, 0);
       do{
         updateReadings(IMMEDIATE);
         diff2 = getReadings(sensor1) - getReadings(sensor2);
       }while(diff2 >= diff);
-      motor->stopBot();
+      motor->stopBot();*/
 			motor->rotateLeft(SLOW_RPM, 0);
 		}
     do
     {
-      updateReadings(IMMEDIATE);
+      updateReadings(IMMEDIATE,front_or_side=='F',front_or_side=='S');
       diff = getReadings(sensor1) - getReadings(sensor2);
     }while(abs(diff) > tolerance && (isRight == (diff>0)));
     if(DEBUG && (isRight != (diff>0)))Serial.println("Rot overshoot");
@@ -205,11 +206,10 @@ bool Calibration::calibrateRotation(char front_or_side)
 bool Calibration::calibrateDisplacement(char front_or_side)
 {	
 	// update readings, usually executed after rotated back to spot
-  delay(200);
-	updateReadings(WAIT);
+	updateReadings(WAIT,true,true); // AQEDIT
 	int diff;
   int tolerance_far = DISPLACEMENT_FINE_TOLERANCE;
-  int tolerance_near = -DISPLACEMENT_FINE_TOLERANCE;
+  int tolerance_near = -DISPLACEMENT_FINE_TOLERANCE+10;
 	float toleranceScale;
 	if(front_or_side == 'F')
 	{
@@ -229,10 +229,10 @@ bool Calibration::calibrateDisplacement(char front_or_side)
 			}
       do
       {
-        updateReadings(IMMEDIATE);
+        updateReadings(IMMEDIATE,true,false);
         diff = getReadings(trustedSensorForDist);
         motor->adjustSpeed(diff>0);
-      }while((diff > tolerance_far+15 || diff < tolerance_near) && (isMovingFront == (diff>0))); // +15 to make robot stop earlier, else always overshoots
+      }while((diff > tolerance_far+5 || diff < tolerance_near-2) && (isMovingFront == (diff>0))); // +15 to make robot stop earlier, else always overshoots
       if(DEBUG && (isMovingFront != (diff>0)))Serial.println("Displ overshoot");
       motor->stopBot();
       return true;
@@ -249,7 +249,7 @@ bool Calibration::calibrateDisplacement(char front_or_side)
     else if(sensor2 != -1)displacement_fixLater = getReadings(sensor2);
     else return false;
 		
-		if(displacement_fixLater > tolerance_far || displacement_fixLater < tolerance_near-5) // -5 to allow nearer, prevent turning and realizing no need to back off
+		if(displacement_fixLater > tolerance_far+8 || displacement_fixLater < tolerance_near-7) // -5 to allow nearer, prevent turning and realizing no need to back off // AQEDIT
 		{
 			motor->rotateRight(105, 90);
       sensor1 = FL;
@@ -257,7 +257,7 @@ bool Calibration::calibrateDisplacement(char front_or_side)
 			calibrateDisplacement('F');
       sensor1 = S_FR;
       sensor2 = S_BR;
-			delay(200);
+			//delay(200); // AQEDIT: delete delay because not necessary after calibration
 			motor->rotateLeft(105, 90);
       return true;
 		}
@@ -268,13 +268,20 @@ bool Calibration::calibrateDisplacement(char front_or_side)
 	}
 }
 // utilities
-void Calibration::updateReadings(bool wait)
+void Calibration::updateReadings(bool wait, bool front, bool side)
 {
-	if(wait)delay(200);
-	for(int i=0; i<6; i++)
-	{
-	  IR_sensors[i]->takeReading(true);
-	}
+	if(wait)delay(50); // AQEDIT
+  if(front)
+  {
+    IR_sensors[FL]->takeReading(true);
+    IR_sensors[FM]->takeReading(true);
+    IR_sensors[FR]->takeReading(true);
+  }
+  if(side)
+  {
+    IR_sensors[S_FR]->takeReading(true);
+    IR_sensors[S_BR]->takeReading(true);
+  }
 }
 bool Calibration::sensorValid(int sensorID, int8_t closeOrFar)
 {

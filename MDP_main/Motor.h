@@ -23,9 +23,9 @@ const int CPR = 400; // Count Per Right angle
 //const int ROTATE_OFFSET_LEFT = -4; // inc means rotate left more
 
 //PID constant for E1
-const float k1_e1 = 0.04;
-const float k2_e1 = -0.04;
-const float k3_e1 = 0.04;
+const float k1_e1 = 0.06;
+const float k2_e1 = -0.06;
+const float k3_e1 = 0.06;
 //PID constant for E2
 const float k1_e2 = 0.04;
 const float k2_e2 = -0.04;
@@ -55,6 +55,7 @@ const int ROTATE_RIGHT_OFFSET = BACKWARD_TICK+sizeof(int)*18;
 const int ROTATE_LEFT_OFFSET = ROTATE_RIGHT_OFFSET+sizeof(int);
 const int PID_RIGHT_OFFSET = ROTATE_LEFT_OFFSET+sizeof(int);
 const int PID_LEFT_OFFSET = PID_RIGHT_OFFSET+sizeof(int);
+const int STARTSPEED_DIFF = PID_LEFT_OFFSET + sizeof(int);
 
 class Motor
 {
@@ -80,6 +81,7 @@ class Motor
         int CPC_B[17];
         int left_offset;
         int right_offset;
+        int startspeed_diff;
     
     public:
         bool isRunning;
@@ -103,6 +105,7 @@ class Motor
         void setRotateLeftTick(int tick);
         void setPIDRightOffset(int offset);
         void setPIDLeftOffset(int offset);
+        void setStartSpeedDiff(int offset);
         void printInfo();
 };
 
